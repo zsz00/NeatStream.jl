@@ -8,7 +8,6 @@ v0.2.0
 
 
 
-
 TODO
 1. 加入state
 2. 集成 DataFrames.jl, Transducers.jl, OnlineStats.jl 
