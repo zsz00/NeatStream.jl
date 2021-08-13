@@ -5,7 +5,6 @@ using DataFrames
 
 include("connector.jl")
 include("event.jl")
-include("state.jl")
 
 include("operators.jl")
 include("op_1.jl")
