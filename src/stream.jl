@@ -8,14 +8,14 @@ function Base.iterate(stream::AbstractStream, state = 1)
     return out_data
 end
 
-function Base.push!(stream::AbstractStream, modifier::Modifier)
-    push!(stream.modifiers, modifier)
+function Base.push!(stream::AbstractStream, operator::Operator)
+    push!(stream.operators, operator)
     return nothing
 end
 
 function clear!(stream::AbstractStream)
-    for i = 1:length(stream.modifiers)
-        pop!(stream.modifiers)
+    for i = 1:length(stream.operators)
+        pop!(stream.operators)
     end
 
     return nothing
@@ -42,7 +42,7 @@ increment(stream::AbstractStream) = increment(stream.event)
 mutable struct BatchStream <: AbstractStream
     connector::AbstractConnector   # 数据流的连接器. 包含有conn.state, conn.iter
     batch_size::Int   # batch size
-    modifiers::Array{Modifier}  # op/处理器
+    operators::Array{Operator}  # op/处理器
     event::Event   # 事件
     # state::State  # 状态, stream state, ops state 
 end
@@ -51,7 +51,7 @@ function BatchStream(conn::AbstractConnector; batch_size::Int = 1)
     if batch_size <= 0
         throw(ArgumentError("batch_size must be greater than 0"))
     end
-    batch_stream = BatchStream(conn, batch_size, Modifier[], Event(conn.args))
+    batch_stream = BatchStream(conn, batch_size, Operator[], Event(conn.args))
     return batch_stream
 end
 
@@ -68,8 +68,8 @@ function listen(stream::BatchStream)::DataFrame
         !hasnext(stream.connector) ? break : nothing
 
         data = next(stream.connector)
-        apply!(Modifiers(stream.modifiers), data, stream.event)
-        # 用modifiers 对 data进行处理, 处理后返回被原地修改的data.. 
+        apply!(Operators(stream.operators), data, stream.event)
+        # 用operators 对 data进行处理, 处理后返回被原地修改的data.. 
 
         push!(values, data)  # 处理数据
     end
@@ -81,13 +81,13 @@ end
 # 数据流的结构
 mutable struct Stream <: AbstractStream
     connector::AbstractConnector   # 数据流的连接器. 包含有conn.state
-    modifiers::Array{Modifier}  # op
+    operators::Array{Operator}  # op
     event::Event   # 事件
     # state::Dict  # 状态, stream state, ops state 
 end
 # 构造韩式,初始化
 function Stream(conn::AbstractConnector)
-    return Stream(conn, Modifier[], Event(conn.args))
+    return Stream(conn, Operator[], Event(conn.args))
 end
 
 function listen(stream::Stream)::DataFrame
@@ -98,8 +98,8 @@ function listen(stream::Stream)::DataFrame
     increment(stream)
 
     data = next(stream.connector)
-    apply!(Modifiers(stream.modifiers), data, stream.event)
-    # 用modifiers 对 data进行处理, 处理后返回被原地修改的data.. 
+    apply!(Operators(stream.operators), data, stream.event)
+    # 用operators 对 data进行处理, 处理后返回被原地修改的data.. 
 
     return data
 end

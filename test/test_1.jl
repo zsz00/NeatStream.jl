@@ -34,7 +34,7 @@ function test_2()
     stream = EasyStream.BatchStream(conn_df; batch_size=2);
 
     # ops
-    filter = EasyStream.FilterModifier([:x, :y])
+    filter = EasyStream.FilterOperator([:x, :y])
     push!(stream, filter)
 
     for i = 1:size(df, 1)
@@ -54,9 +54,9 @@ function test_3()
     stream = EasyStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
 
     # 定义ops
-    filter_op1 = EasyStream.FilterModifier([:x, :y])  # 过滤指定的列
+    filter_op1 = EasyStream.FilterOperator([:x, :y])  # 过滤指定的列
     push!(stream, filter_op1)   # 向stream上加op.  
-    filter_op2 = EasyStream.FilterModifier(:x)
+    filter_op2 = EasyStream.FilterOperator(:x)
     push!(stream, filter_op2)
     # source.map(op_1, init=op_state, returns_state=True).map(op_2)
 

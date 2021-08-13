@@ -1,4 +1,4 @@
-function DriftModifier(filter::Function, drift::Function)
+function DriftOperator(filter::Function, drift::Function)
     function f(data, event)
         elements = filter(data)
 
@@ -9,27 +9,27 @@ function DriftModifier(filter::Function, drift::Function)
         return nothing
     end
 
-    AlterDataModifier(f)
+    AlterDataOperator(f)
 end
 
 sigmoid(x; c1 = 1.0, c2 = 0.0) = 1 / (1 + ℯ ^ (-c1 * (x - c2)))
 
-function ClassDriftModifier(column::Symbol, value::T, drift::Function) where T <: Number
-    return DriftModifier((data) -> findall(r-> r == value, data[:, column]), drift)
+function ClassDriftOperator(column::Symbol, value::T, drift::Function) where T <: Number
+    return DriftOperator((data) -> findall(r-> r == value, data[:, column]), drift)
 end
 
-function IncrementalDriftModifier(vetor::Dict{Symbol, T}, filter::Function; c1 = 1.0, c2 = 0.0)::Modifiers where T <: Number
-    modifiers = EasyStream.Modifier[]
+function IncrementalDriftOperator(vetor::Dict{Symbol, T}, filter::Function; c1 = 1.0, c2 = 0.0)::Operators where T <: Number
+    operators = EasyStream.Operator[]
     for (column, value) in vetor
-        drift = DriftModifier(filter, (data, event) -> 
+        drift = DriftOperator(filter, (data, event) -> 
                                         data[:, column] = data[:, column] .+ value .* sigmoid(event.time; c1 = c1, c2 = c2))
-        push!(modifiers, drift)
+        push!(operators, drift)
     end
 
-    return Modifiers(modifiers)
+    return Operators(operators)
 end
 
-function SuddenDriftModifier(vetor::Dict{Symbol, T}, filter::Function; c2 = 0.0)::Modifiers where T <: Number
-    return IncrementalDriftModifier(vetor, filter; c1 = 1.0, c2 = c2)
+function SuddenDriftOperator(vetor::Dict{Symbol, T}, filter::Function; c2 = 0.0)::Operators where T <: Number
+    return IncrementalDriftOperator(vetor, filter; c1 = 1.0, c2 = c2)
 end
 

@@ -4,4 +4,4 @@ using Test
 
 include("connector.jl")
 include("stream.jl")
-include("modifiers.jl")
+include("operators.jl")

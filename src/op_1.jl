@@ -2,7 +2,7 @@
 
 # 定义一个op
 # 定义op的数据结构, 即op_state
-struct Sum <: Modifier
+struct Sum <: Operator
     init::Any
 end
 

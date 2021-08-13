@@ -6,7 +6,7 @@ makedocs(;
     pages=[
         "Introduction" => "index.md",
         "Stream" => "stream.md",
-        "Modifiers" => "modifiers.md"
+        "Operators" => "operators.md"
     ],
     repo="https://github.com/ATISLabs/EasyStream.jl/blob/{commit}{path}#L{line}",
     sitename="EasyStream.jl",
