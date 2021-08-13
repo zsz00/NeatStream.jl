@@ -65,9 +65,24 @@ function test_3()
     stream_filtered = EasyStream.listen(stream) 
     println(stream_filtered)
 
+    # sum_op = EasyStream.Sum(100)
+    # push!(stream, sum_op)
     reset!(stream)  # 恢复数据源, 清理掉ops, event, state
     stream_filtered = EasyStream.listen(stream)  # stream->df, 
     println(stream_filtered)
+
+end
+
+
+function test_4()
+    # demo 2021.8.13
+
+    # source
+    # filename = ""
+    # data = CSV.read(filename; header = false)
+    data_df = DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1], z = [6, 5, 4, 3, 2, 1])
+    conn_df = EasyStream.TablesConnector(data_df, shuffle=false)   # 定义数据源 连接器
+    stream = EasyStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
 
 end
 
@@ -81,4 +96,6 @@ pkg>activate .
 julia>using EasyStream
 
 julia --project=/home/zhangyong/codes/EasyStream.jl/Project.toml "/home/zhangyong/codes/EasyStream.jl/test/test_1.jl"
+
+
 =#

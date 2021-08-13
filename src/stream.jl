@@ -46,7 +46,7 @@ mutable struct BatchStream <: AbstractStream
     event::Event   # 事件
     # state::State  # 状态, stream state, ops state 
 end
-
+# 构造韩式,初始化
 function BatchStream(conn::AbstractConnector; batch_size::Int = 1)
     if batch_size <= 0
         throw(ArgumentError("batch_size must be greater than 0"))
@@ -61,35 +61,31 @@ function listen(stream::BatchStream)::DataFrame
         return DataFrame()
     end
 
-    increment(stream)
+    increment(stream)  # stream上的状态更新
 
     values = DataFrame[]
-
     for i = 1:stream.batch_size
         !hasnext(stream.connector) ? break : nothing
 
         data = next(stream.connector)
         apply!(Modifiers(stream.modifiers), data, stream.event)
-        # for modifier in stream.modifiers
-        #     # 在 当前 一个数据iter上 作用op/modifier处理. 
-        #     apply!(modifier, data, stream.event)    # modifier上的处理函数. 现在data只支持dataframe类型. 
-        # end
-        
-        push!(values, data)
+        # 用modifiers 对 data进行处理, 处理后返回被原地修改的data.. 
+
+        push!(values, data)  # 处理数据
     end
     data_df = vcat(values...)  # 行/垂直拼接
+    # 输出
     return data_df
 end
 
-
+# 数据流的结构
 mutable struct Stream <: AbstractStream
     connector::AbstractConnector   # 数据流的连接器. 包含有conn.state
-    # batch_size::Int   # batch size
     modifiers::Array{Modifier}  # op
     event::Event   # 事件
     # state::Dict  # 状态, stream state, ops state 
 end
-
+# 构造韩式,初始化
 function Stream(conn::AbstractConnector)
     return Stream(conn, Modifier[], Event(conn.args))
 end
@@ -101,24 +97,15 @@ function listen(stream::Stream)::DataFrame
 
     increment(stream)
 
-    values = DataFrame[]
+    data = next(stream.connector)
+    apply!(Modifiers(stream.modifiers), data, stream.event)
+    # 用modifiers 对 data进行处理, 处理后返回被原地修改的data.. 
 
-    for i = 1:stream.batch_size
-        !hasnext(stream.connector) ? break : nothing
-
-        data = next(stream.connector)
-        for modifier in stream.modifiers
-            # 在 当前 一个数据iter上 作用op/modifier处理. 
-            apply!(modifier, data, stream.event)    # modifier上的处理函数. 现在data只支持dataframe类型. 
-        end
-        
-        push!(values, data)
-    end
-    data_df = vcat(values...)  # 行/垂直拼接
-    return data_df
+    return data
 end
 
 function Base.iterate(stream::Stream, state = 1)
+    # iter(stream, op)
     data = listen(stream)   # stream -> df
     out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
     # state = state +1 
@@ -131,7 +118,6 @@ end
 #=
 2021.8.13 
 
-每个op 有自己的state, 还是每个 stream有自己的state ??
 应该是 每个op 有自定义的state. stream上也可以有内置的state 
 
 

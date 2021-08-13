@@ -9,6 +9,7 @@ end
 
 Modifiers(modifiers::Modifier ...) = Modifiers([modifiers...])
 
+# 自由度不够好, 只能靠 data 原地修改. 
 function apply!(modifiers::Modifiers, data::DataFrame, event::Event)
     for modifier in modifiers.modifiers
         apply!(modifier, data, event)
@@ -36,12 +37,6 @@ end
 # 这个就是op_state,op的数据结构
 struct FilterModifier <: Modifier
     columns::Array{Symbol}
-    # state::State
-    # function FilterModifier(columns)
-    #     _columns = unique(columns)
-    #     if length(_columns) != length(columns) @warn "There are duplicate columns." end
-    #     return new(_columns)
-    # end
 end
 
 # 构造函数
@@ -64,7 +59,7 @@ function apply!(modifier::FilterModifier, data::DataFrame, event::Event)
         end
     end
 
-    select!(data, columns)
+    select!(data, columns)  # 修改data
     return nothing
 end
 
@@ -84,5 +79,5 @@ end
 自定义一个op:
 1. struct op_state
 2. function apply!(op_state)
-
+listen()  相当于 complete ? 
 =#
