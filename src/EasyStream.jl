@@ -4,6 +4,7 @@ using CSV
 using DataFrames
 
 include("connector.jl")
+
 include("event.jl")
 
 include("operators.jl")
@@ -24,7 +25,7 @@ end # module
 
 #=
 stream  数据流
-operator  装饰器, 处理器, 方法, op
+operator   处理器,算子,op
 connector  连接器
 event   事件
 state   状态

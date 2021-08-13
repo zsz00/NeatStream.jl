@@ -33,3 +33,4 @@ function SuddenDriftOperator(vetor::Dict{Symbol, T}, filter::Function; c2 = 0.0)
     return IncrementalDriftOperator(vetor, filter; c1 = 1.0, c2 = c2)
 end
 
+# drift  漂移,变化, 滑动 

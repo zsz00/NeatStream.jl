@@ -46,7 +46,7 @@ mutable struct BatchStream <: AbstractStream
     event::Event   # 事件
     # state::State  # 状态, stream state, ops state 
 end
-# 构造韩式,初始化
+# 构造函数,初始化
 function BatchStream(conn::AbstractConnector; batch_size::Int = 1)
     if batch_size <= 0
         throw(ArgumentError("batch_size must be greater than 0"))
@@ -69,7 +69,7 @@ function listen(stream::BatchStream)::DataFrame
 
         data = next(stream.connector)
         apply!(Operators(stream.operators), data, stream.event)
-        # 用operators 对 data进行处理, 处理后返回被原地修改的data.. 
+        # 用operators 对 data进行处理,处理后返回被原地修改的data
 
         push!(values, data)  # 处理数据
     end
@@ -78,6 +78,7 @@ function listen(stream::BatchStream)::DataFrame
     return data_df
 end
 
+
 # 数据流的结构
 mutable struct Stream <: AbstractStream
     connector::AbstractConnector   # 数据流的连接器. 包含有conn.state
@@ -85,7 +86,7 @@ mutable struct Stream <: AbstractStream
     event::Event   # 事件
     # state::Dict  # 状态, stream state, ops state 
 end
-# 构造韩式,初始化
+# 构造函数,初始化
 function Stream(conn::AbstractConnector)
     return Stream(conn, Operator[], Event(conn.args))
 end
@@ -107,7 +108,7 @@ end
 function Base.iterate(stream::Stream, state = 1)
     # iter(stream, op)
     data = listen(stream)   # stream -> df
-    out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
+    out_data = isempty(data) ? nothing : (data, state+1)  # (df, state)
     # state = state +1 
     return out_data
 end
@@ -118,7 +119,24 @@ end
 #=
 2021.8.13 
 
-应该是 每个op 有自定义的state. stream上也可以有内置的state 
+stream:
 
+Transducers.jl/Chain.jl/FP
+source |> op_1 |> op_2 |> sink
+@chain df begin
+  dropmissing
+  filter(:id => >(6), _)
+  groupby(:group)
+  combine(:age => sum)
+end
+
+flink/streamz/OOP:
+stream = source.map(op_1)
+stream = stream.map(op_2)
+stream.sink
+
+
+ops 之间用 queue
+op 中用并行
 
 =#

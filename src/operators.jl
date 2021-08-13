@@ -11,13 +11,13 @@ Operators(operators::Operator ...) = Operators([operators...])
 
 # 自由度不够好, 只能靠 data 原地修改. 
 function apply!(operators::Operators, data::DataFrame, event::Event)
+    # 没这么简单, 一个for就处理了. 换成Chain.jl
     for operator in operators.operators
         apply!(operator, data, event)
     end
 
     return nothing
 end
-
 
 
 struct NoiseOperator <: Operator
@@ -34,7 +34,7 @@ end
 
 
 # 定义一个op
-# 这个就是op_state,op的数据结构
+# 定义op的数据结构, 即op_state
 struct FilterOperator <: Operator
     columns::Array{Symbol}
 end
@@ -79,5 +79,6 @@ end
 自定义一个op:
 1. struct op_state
 2. function apply!(op_state)
-listen()  相当于 complete ? 
+listen()  相当于 complete ? 是
+
 =#
