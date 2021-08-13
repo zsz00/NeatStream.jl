@@ -1,14 +1,10 @@
 
-function increment(event::Event)
-    event.time += 1
-    return nothing
-end
-
 abstract type AbstractStream end
 
 function Base.iterate(stream::AbstractStream, state = 1)
-    data = listen(stream)
-    out_data = isempty(data) ? nothing : (data, state+1)
+    data = listen(stream)   # stream -> df
+    out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
+    # state = state +1 
     return out_data
 end
 
@@ -33,7 +29,14 @@ function reset!(stream::AbstractStream)
     return nothing
 end
 
+function increment(event::Event)
+    event.time += 1
+    return nothing
+end
+
 increment(stream::AbstractStream) = increment(stream.event)
+
+
 
 # 批数据流的结构   ***********
 mutable struct BatchStream <: AbstractStream
@@ -41,7 +44,7 @@ mutable struct BatchStream <: AbstractStream
     batch_size::Int   # batch size
     modifiers::Array{Modifier}  # op/处理器
     event::Event   # 事件
-    # state::Dict  # 状态, stream state, ops state 
+    # state::State  # 状态, stream state, ops state 
 end
 
 function BatchStream(conn::AbstractConnector; batch_size::Int = 1)
@@ -66,10 +69,11 @@ function listen(stream::BatchStream)::DataFrame
         !hasnext(stream.connector) ? break : nothing
 
         data = next(stream.connector)
-        for modifier in stream.modifiers
-            # 在 当前 一个数据iter上 作用op/modifier处理. 
-            apply!(modifier, data, stream.event)    # modifier上的处理函数. 现在data只支持dataframe类型. 
-        end
+        apply!(Modifiers(stream.modifiers), data, stream.event)
+        # for modifier in stream.modifiers
+        #     # 在 当前 一个数据iter上 作用op/modifier处理. 
+        #     apply!(modifier, data, stream.event)    # modifier上的处理函数. 现在data只支持dataframe类型. 
+        # end
         
         push!(values, data)
     end
@@ -114,12 +118,21 @@ function listen(stream::Stream)::DataFrame
     return data_df
 end
 
+function Base.iterate(stream::Stream, state = 1)
+    data = listen(stream)   # stream -> df
+    out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
+    # state = state +1 
+    return out_data
+end
+
+
+
 
 #=
 2021.8.13 
-stream  数据流
-modifier  装饰器, 处理器, 方法
-connector  连接器
-event   事件
+
+每个op 有自己的state, 还是每个 stream有自己的state ??
+应该是 每个op 有自定义的state. stream上也可以有内置的state 
+
 
 =#

@@ -39,11 +39,13 @@ function test_2()
 
     for i = 1:size(df, 1)
         stream_filtered = EasyStream.listen(stream)  # stream->df 
-
+    end
 end
 
 
 function test_3()
+    # demo 2021.8.13
+
     # source
     # filename = ""
     # data = CSV.read(filename; header = false)
@@ -53,17 +55,19 @@ function test_3()
 
     # 定义ops
     filter_op1 = EasyStream.FilterModifier([:x, :y])  # 过滤指定的列
-    push!(stream, filter_op1)   # 向stream上加op
+    push!(stream, filter_op1)   # 向stream上加op.  
     filter_op2 = EasyStream.FilterModifier(:x)
     push!(stream, filter_op2)
+    # source.map(op_1, init=op_state, returns_state=True).map(op_2)
+
     # 处理
     stream_filtered = EasyStream.listen(stream)  # run iter. stream->df 
     stream_filtered = EasyStream.listen(stream) 
-    print(stream_filtered)
+    println(stream_filtered)
 
     reset!(stream)  # 恢复数据源, 清理掉ops, event, state
     stream_filtered = EasyStream.listen(stream)  # stream->df, 
-    print(stream_filtered)
+    println(stream_filtered)
 
 end
 
@@ -76,4 +80,5 @@ julia>cd("/home/zhangyong/codes/EasyStream.jl")
 pkg>activate .
 julia>using EasyStream
 
+julia --project=/home/zhangyong/codes/EasyStream.jl/Project.toml "/home/zhangyong/codes/EasyStream.jl/test/test_1.jl"
 =#
