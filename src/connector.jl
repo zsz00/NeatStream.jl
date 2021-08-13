@@ -7,11 +7,12 @@ hasnext(conn::AbstractConnector) = true
 reset!(conn::AbstractConnector) = nothing
 
 mutable struct TablesConnector <: AbstractConnector
-    rows
-    state::Int
+    rows    # Row iterator
+    state::Int   # global iter num
     args::Dict{Symbol, Any}
 end
 
+# 构造函数
 function TablesConnector(data; shuffle::Bool = false)
     if !Tables.istable(data)
         throw(ArgumentError("data must have the Tables.jl interface"))
@@ -20,16 +21,17 @@ function TablesConnector(data; shuffle::Bool = false)
     if shuffle
         data = data[Random.shuffle(1:size(data,1)), :]
     end
-
-    return TablesConnector(Tables.rows(data), 0, Dict{Symbol, Any}())
+    tables_connector = TablesConnector(Tables.rows(data), 0, Dict{Symbol, Any}())
+    return tables_connector
 end
 
+# 构造函数
 function TablesConnector(data, orderBy::Symbol; rev::Bool = false)
     if !(orderBy in propertynames(data))
         throw(ArgumentError("data doesn't have the column $orderBy"))
     end
 
-    data = sort(data, orderBy, rev = rev)
+    data = sort(data, orderBy, rev = rev)   # sort(df)
 
     return TablesConnector(data)
 end
@@ -51,13 +53,13 @@ end
 
 reset!(conn::TablesConnector) = conn.state = 0
 
+
 mutable struct GeneratorConnector <: AbstractConnector
     generator::Function
     args::Dict{Symbol, Any}
 end
 
-function GeneratorConnector(generator::Function;
-                            args...)
+function GeneratorConnector(generator::Function; args...)
     return GeneratorConnector(generator, args)
 end
 

@@ -2,7 +2,7 @@
 
     df = DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1], z = [6, 5, 4, 3, 2, 1])
     conn_df = EasyStream.TablesConnector(df);
-    stream = EasyStream.BatchStream(conn_df; batch = 2);
+    stream = EasyStream.BatchStream(conn_df; batch_size = 2);
 
     filter = EasyStream.FilterModifier([:x, :y])
     push!(stream, filter)

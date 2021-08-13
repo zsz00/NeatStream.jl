@@ -14,7 +14,7 @@ function getug2c5ddata(dir)
     mv(path, joinpath(defdir, "synthetic/UG_2C_5D.csv"))
 end
 
-function Dataset1CDT(batch::Int)::BatchStream
+function Dataset1CDT(batch_size::Int)::BatchStream
     filename = "$(defdir)/synthetic/1CDT.csv"
 
     isfile(filename) || get1cdtdata(defdir)
@@ -23,14 +23,14 @@ function Dataset1CDT(batch::Int)::BatchStream
 
     conn = EasyStream.TablesConnector(data)
 
-    stream = BatchStream(conn; batch = batch)
+    stream = BatchStream(conn; batch_size = batch_size)
 
     return stream
 end
 
 Dataset1CDT() = Dataset1CDT(1)
 
-function DatasetUG_2C_5D(batch::Int)::BatchStream
+function DatasetUG_2C_5D(batch_size::Int)::BatchStream
     filename = "$(defdir)/synthetic/UG_2C_5D.csv"
 
     isfile(filename) || getug2c5ddata(defdir)
@@ -39,7 +39,7 @@ function DatasetUG_2C_5D(batch::Int)::BatchStream
 
     conn = EasyStream.TablesConnector(data)
 
-    stream = BatchStream(conn, batch)
+    stream = BatchStream(conn, batch_size)
 
     return stream
 end

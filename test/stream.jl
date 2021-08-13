@@ -24,20 +24,20 @@
         df = DataFrame(x = [1:elements ...], y = [1:elements ...])
         conn = EasyStream.TablesConnector(df)
 
-        batch = 10
-        stream = EasyStream.BatchStream(conn, batch = batch)
+        batch_size = 10
+        stream = EasyStream.BatchStream(conn, batch_size = batch_size)
         data = EasyStream.listen(stream)
-        @test size(data)[1] == batch
+        @test size(data)[1] == batch_size
         @test size(data)[2] == size(df)[2]
 
         elements = 5
         df = DataFrame(x = [1:elements ...], y = [1:elements ...])
         conn = EasyStream.TablesConnector(df)
 
-        batch = 10
-        stream = EasyStream.BatchStream(conn, batch = batch)
+        batch_size = 10
+        stream = EasyStream.BatchStream(conn, batch_size = batch_size)
         data = EasyStream.listen(stream)
-        @test size(data)[1] < batch
+        @test size(data)[1] < batch_size
         @test size(data)[2] == size(df)[2]
         @test size(data)[1] == elements
 
@@ -57,17 +57,17 @@
         df = DataFrame(x = [1:elements ...], y = [1:elements ...])
         conn = EasyStream.TablesConnector(df)
 
-        batch = 100
+        batch_size = 100
 
-        stream = EasyStream.BatchStream(conn, batch = batch)
+        stream = EasyStream.BatchStream(conn, batch_size = batch_size)
         i = 0
         for data in stream
-            @test size(data)[1] == batch
+            @test size(data)[1] == batch_size
             @test size(data)[2] == size(df)[2]
             i = i + 1
         end
 
-        @test i == Int(elements ./ batch)
+        @test i == Int(elements ./ batch_size)
     end
 
 end

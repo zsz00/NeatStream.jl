@@ -4,3 +4,4 @@ mutable struct Event
 end
 
 Event(args::Dict{Symbol, Any}) = Event(0, args)
+

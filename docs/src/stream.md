@@ -70,7 +70,7 @@ conn_df_orderby = EasyStream.TablesConnector(df, :x); # Ordernação
 Foi implementado o __BatchStream__, que é um __AbstractStream__, e ele abstrai o fluxo de dados. Ele receberá por parâmetro um __AbstractConnector__ e opcionalmente o tamanho do _batch_. Exemplo:
 
 ```julia
-stream = EasyStream.BatchStream(conn_gen; batch = 5);
+stream = EasyStream.BatchStream(conn_gen; batch_size = 5);
 ```
 
 Ou fazer uma interação através de um _for_.

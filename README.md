@@ -45,3 +45,4 @@ Some important packages:
 
 [coverage-img]: https://coveralls.io/repos/github/ATISLabs/EasyStream.jl/badge.svg?branch=master
 [coverage-url]: https://coveralls.io/github/ATISLabs/EasyStream.jl?branch=master
+

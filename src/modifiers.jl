@@ -2,6 +2,7 @@ using Random
 
 abstract type Modifier end
 
+
 struct Modifiers <: Modifier
     modifiers::Array{Modifier}
 end
@@ -19,7 +20,7 @@ end
 
 struct NoiseModifier <: Modifier
     seed::Random.MersenneTwister
-    attribute::Float64 # The fraction of attribute values to disturb
+    attribute::Float64 # The fraction of attribute values to disturb. 需要干扰的属性值的比例
 end
 
 NoiseModifier(attribute::Float64, seed::Int) = NoiseModifier(Random.seed!(seed), attribute)

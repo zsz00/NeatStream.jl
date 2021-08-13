@@ -1,0 +1,22 @@
+v0.1.0 
+base on EasyStream.jl 
+学习
+
+v0.2.0 
+1. table 的 stream. 
+
+
+
+
+
+
+TODO
+1. 加入state
+2. 集成 DataFrames.jl, Transducers.jl, OnlineStats.jl 
+3. 集成Dagger.jl 
+
+
+
+
+
+
