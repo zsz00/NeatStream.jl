@@ -83,6 +83,21 @@ function test_4()
     data_df = DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1], z = [6, 5, 4, 3, 2, 1])
     conn_df = EasyStream.TablesConnector(data_df, shuffle=false)   # 定义数据源 连接器
     stream = EasyStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
+    
+    filter_op1 = EasyStream.FilterOperator([:x, :y])  # 过滤指定的列
+    push!(stream, filter_op1)   # 向stream上加op.  
+    filter_op2 = EasyStream.FilterOperator(:x)
+    push!(stream, filter_op2)
+
+    cluster_pipeline = @chain stream begin
+        filter_op1
+        filter_op2
+        filter(:id => >(6), _)
+        groupby(:group)
+        agg(:age => sum)
+        union
+        sink
+      end
 
 end
 

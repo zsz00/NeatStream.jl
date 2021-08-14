@@ -1,5 +1,5 @@
 mutable struct Event
-    time::Int
+    process_time::Int
     args::Dict{Symbol, Any}
 end
 
