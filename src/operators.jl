@@ -20,6 +20,10 @@ function apply!(operators::Operators, data::DataFrame, event::Event)
     return nothing
 end
 
+mutable struct SingleOutputStreamOperator <: DataSteam
+
+end
+
 
 struct OneInputStreamOperator <: Operator
 end
@@ -57,36 +61,38 @@ end
 
 
 
+
+
 # 定义一个op
 # 定义op的数据结构, 即op_state
-struct FilterOperator <: Operator
-    columns::Array{Symbol}
-end
+# struct FilterOperator <: Operator
+#     columns::Array{Symbol}
+# end
 
-# 构造函数, initializeState
-function FilterOperator(columns::Array{Symbol})
-    _columns = unique(columns)
-    if length(_columns) != length(columns) @warn "There are duplicate columns." end
-    return FilterOperator(_columns)
-end
+# # 构造函数, initializeState
+# function FilterOperator(columns::Array{Symbol})
+#     _columns = unique(columns)
+#     if length(_columns) != length(columns) @warn "There are duplicate columns." end
+#     return FilterOperator(_columns)
+# end
 
-# 构造函数
-FilterOperator(columns::Symbol...) = FilterOperator([columns...])
+# # 构造函数
+# FilterOperator(columns::Symbol...) = FilterOperator([columns...])
 
-# processElement
-function apply!(operator::FilterOperator, data::DataFrame, event::Event)
-    columns = Symbol[]
-    for col in operator.columns
-        if !(col in propertynames(data))
-            throw(ArgumentError("stream doesn't have the column $col"))
-        else
-            push!(columns, col)
-        end
-    end
+# # processElement
+# function apply!(operator::FilterOperator, data::DataFrame, event::Event)
+#     columns = Symbol[]
+#     for col in operator.columns
+#         if !(col in propertynames(data))
+#             throw(ArgumentError("stream doesn't have the column $col"))
+#         else
+#             push!(columns, col)
+#         end
+#     end
 
-    select!(data, columns)  # 修改data
-    return nothing
-end
+#     select!(data, columns)  # 修改data
+#     return nothing
+# end
 
 
 

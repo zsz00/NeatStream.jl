@@ -22,16 +22,16 @@ end
 DataSteam(env,transform=[]) = DataSteam(env, transform)
 
 
-# 构造函数,初始化
-function Stream(upstream, upstreams, stream_name)
-    args = Dict()
-    return Stream(stream_name, 0, 0, upstream, upstreams, args)
-end
-
-
 # 注册op到stream上. *****
-function transform(stream::DataSteam, operator_name::String, output_type, operator::OneInputStreamOperator)::OneInputStreamOperator<:DataSteam
-    
+function transform(stream::DataSteam, operator_name::String, output_type, operator::OneInputStreamOperator)::DataSteam
+
+    args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
+    transform = Transformation(operator_name, 1, output_type, 1, args_default)
+    transform = OneInputTransformation(transform, operator)
+
+    stream.transformation = transform             # 注册op到stream上,无operator
+    add_operator(stream.environment, transform)   # 注册op到env
+    return stream
 end
 
 

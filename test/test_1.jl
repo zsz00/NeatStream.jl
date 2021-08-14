@@ -107,6 +107,7 @@ function test_5()
     args_default = Dict("stream_time_type"=>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
     env = Environment("test_job", args_default)
 
+    path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"
     data_stream_source = readTextFile(env, path)
     data_stream = DataSteam(env, transform)
 

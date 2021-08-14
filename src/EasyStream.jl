@@ -5,12 +5,18 @@ using DataFrames
 
 include("connector.jl")
 
+include("env.jl")
+
 include("event.jl")
 
 include("operators.jl")
 include("op_1.jl")
 
+include("transformation.jl")
+
 include("stream.jl")
+
+include("element.jl")
 
 include("others.jl")
 
