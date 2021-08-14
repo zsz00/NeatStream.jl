@@ -31,9 +31,10 @@ op(stat,data) -> stat,data
 
 
 
+1. 设计 api, 参考的flink 
+2. 实现流处理
 
-代码生成: op_1(stat), 会自己生成 一个 struct对象.  
-
+env -> datastream -> op -> output
 
 
 

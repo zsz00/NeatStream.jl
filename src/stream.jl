@@ -10,8 +10,17 @@ mutable struct Stream <: AbstractStream
     upstream
     upstreams::Array
     downstreams::Set
+    parallelism::Int
     args::Dict{Symbol, Any}
 end
+
+mutable struct DataSteam <: AbstractStream
+    environment::Environment 
+    transformation::Transformation  # map, start, keyby, filter, process 这些都是 转换 
+end
+
+DataSteam(env,transform=[]) = DataSteam(env, transform)
+
 
 # 构造函数,初始化
 function Stream(upstream, upstreams, stream_name)
@@ -20,11 +29,18 @@ function Stream(upstream, upstreams, stream_name)
 end
 
 
+# 注册op到stream上. *****
+function transform(stream::DataSteam, operator_name::String, output_type, operator::OneInputStreamOperator)::OneInputStreamOperator<:DataSteam
+    
+end
+
+
 function start(stream::AbstractStream)
     for upstream in stream.upstreams
         upstream.start()
     end
 end
+
 
 function Base.iterate(stream::AbstractStream, state = 1)
     data = listen(stream)   # stream -> df
@@ -53,6 +69,10 @@ function reset!(stream::AbstractStream)
     return nothing
 end
 
+function set_parallelism!(stream::AbstractStream, parallelism::Int)
+    stream.parallelism = parallelism
+end
+
 function increment(event::Event)
     event.process_time += 1
     return nothing
@@ -61,6 +81,7 @@ end
 increment(stream::AbstractStream) = increment(stream.event)
 
 
+# streamz
 mutable struct MapedStream <: AbstractStream
     name::String
     current_value
@@ -97,6 +118,7 @@ function Base.iterate(stream::Stream, data::Any, asynchronous::Bool=false)::Iter
     apply!(Operators(stream.operators), data, stream.event)
     return (stream, data)
 end
+
 
 """
     Push data into the stream at this point
@@ -156,24 +178,33 @@ end
 
 function map(strean::Stream, func::Function, x, args)::MapedStream
     data_out = func(x, args)
-
-    return (stream, data_out)
+    
+    transform(stream, "map", output_type, (OneInputStreamOperator)operator)
+    # return (stream, data_out)
 end
 
-function process(stream::Stream, op::Operator)::Stream
+function process(stream::Stream, process_func::processFunction)::Stream
+    output_type = []
+    process_operator = ProcessOperator(stream, process_func)
+    transform(stream, "process", output_type, process_operator)
+end
+
+function filter(stream::Stream, filter_func::Function)::Stream
+    outputType = []
+    filter_operator = FilterOperator(stream, filter_func)
+    transform(stream, "filter", output_type, filter_operator)
+end
+
+function connect(env::Environment, stream::Stream)::ConnectedStream   
+end
+
+function add_sink(stream::Stream, f::Function)::DataStreamSink
     
 end
 
-function filter(stream::Stream, op::Operator)::Stream
-    
-end
-
-function connect(stream::Stream)::ConnectedStream   
-end
 
 
-
-
+# ------------------------------ old --------------------------
 
 # 批数据流的结构   ***********
 mutable struct BatchStream <: AbstractStream

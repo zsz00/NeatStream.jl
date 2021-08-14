@@ -102,6 +102,28 @@ function test_4()
 end
 
 
+function test_5()
+    # demo
+    args_default = Dict("stream_time_type"=>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
+    env = Environment("test_job", args_default)
+
+    data_stream_source = readTextFile(env, path)
+    data_stream = DataSteam(env, transform)
+
+    data_stream = union(data_stream_source, data_stream)
+
+    data_stream = map(data_stream, parse_func)
+    data_stream = process(data_stream, hac_func)
+    add_sink(data_stream, print)
+
+
+    execute(env, "test_job")
+    
+end
+
+
+
+
 test_3()
 
 

@@ -1,6 +1,7 @@
 using Random
 
 abstract type Operator end
+abstract type StreamOperator end
 
 # State
 struct Operators <: Operator
@@ -20,17 +21,40 @@ function apply!(operators::Operators, data::DataFrame, event::Event)
 end
 
 
-struct NoiseOperator <: Operator
-    seed::Random.MersenneTwister
-    attribute::Float64 # The fraction of attribute values to disturb. 需要干扰的属性值的比例
+struct OneInputStreamOperator <: Operator
 end
 
-NoiseOperator(attribute::Float64, seed::Int) = NoiseOperator(Random.seed!(seed), attribute)
-NoiseOperator(attribute::Float64) = NoiseOperator(Random.default_rng(), attribute)
-
-function apply!(operator::NoiseOperator, data::DataFrame, event::Event)
-    return nothing
+mutable struct ProcessOperator <: Operator
+    Timestamped_Collector:Array
+    context
+    currentWatermark::Int
 end
+
+function ProcessOperator()
+    
+end
+
+function processElement(process_op::ProcessOperator, element::StreamRecord)
+    
+end
+
+function processWatermark(process_op::ProcessOperator)
+    
+end
+
+mutable struct FilterOperator <: Operator
+    filter_func
+end
+
+function FilterOperator()
+    
+end
+
+function processElement(filter_op::FilterOperator, element::StreamRecord)
+    data = filter_op.filter_func(element)
+
+end
+
 
 
 # 定义一个op
@@ -39,7 +63,7 @@ struct FilterOperator <: Operator
     columns::Array{Symbol}
 end
 
-# 构造函数
+# 构造函数, initializeState
 function FilterOperator(columns::Array{Symbol})
     _columns = unique(columns)
     if length(_columns) != length(columns) @warn "There are duplicate columns." end
@@ -49,6 +73,7 @@ end
 # 构造函数
 FilterOperator(columns::Symbol...) = FilterOperator([columns...])
 
+# processElement
 function apply!(operator::FilterOperator, data::DataFrame, event::Event)
     columns = Symbol[]
     for col in operator.columns
@@ -64,6 +89,7 @@ function apply!(operator::FilterOperator, data::DataFrame, event::Event)
 end
 
 
+
 struct AlterDataOperator <: Operator
     alter!::Function
 end
@@ -76,6 +102,7 @@ end
 
 
 #=
+大部分Op都是要 用户自定义的
 自定义一个op:
 1. struct op_state
 2. function apply!(op_state)
