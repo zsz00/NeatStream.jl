@@ -8,7 +8,7 @@ mutable struct Environment
 end
 
 args_default = Dict("stream_time_type"=>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
-Environment(args::Dict{Symbol, Any}) = Environment("test_job", args)
+Environment(args::Dict{Symbol, Any}) = Environment("test_job", [], args)
 
 
 function configure(env::Environment, args::Dict{Symbol, Any})
@@ -58,10 +58,11 @@ function readTextFile(env::Environment, path::String)::DataStreamSource
     return data_stream_source
 end
 
-function add_source(env::Environment, outTypeInfo, operator, source_name)::DataStreamSource
+function add_source(env::Environment, outTypeInfo, func, source_name)::DataStreamSource
     is_parallel = false
     source_operator = StreamSource(func)
-    data_stream_source = transform(data_stream_source, "Split_Reader", typeInfo, operator)
+
+    data_stream_source = transform(data_stream_source, "Split_Reader", outTypeInfo, source_operator)
     
     # data_stream_source = DataStreamSource(env, outTypeInfo, operator, is_parallel, source_name)
     return data_stream_source
@@ -72,16 +73,40 @@ function from_source(env::Environment, f::Function)::DataStreamSource
 end
 
 function execute(env::Environment, stream_graph::StreamGraph)::JobExecutionResult
-    
+    execute(streamGraph, env.configuration)
+
 end
 function execute(env::Environment, job_name::String)::JobExecutionResult
     
 end
 
+function getStreamGraph(env::Environment, jobName::String, clearTransformations::Bool)::StreamGraph
+    streamGraph::StreamGraph = generate(env.getStreamGraphGenerator(jobName))
+    if clearTransformations
+        env.transformations = nothing
+    end
+    return streamGraph
+end
+
+function getStreamGraphGenerator(env::Environment)::StreamGraphGenerator
+    if this.transformations.size() <= 0
+        println("No operators defined in streaming topology. Cannot execute.")
+    else
+        stream_sraph_generator = StreamGraphGenerator(env.transformations, env.config, env.checkpointCfg)
+        setStateBackend(stream_sraph_generator, env.defaultStateBackend)
+        setChaining(stream_sraph_generator, env.isChainingEnabled)
+        return stream_sraph_generator
+    end 
+end
+
+
+function getExecutionPlan(env::Environment)
+    return this.getStreamGraph("Flink Streaming Job", false).getStreamingPlanAsJSON();
+end
 
 
 """
 flink.env 
-
+flink\streaming\api\environment\StreamExecutionEnvironment.class
 """
 

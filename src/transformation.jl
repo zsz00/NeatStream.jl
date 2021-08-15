@@ -3,7 +3,7 @@ mutable struct Transformation
     name::Sting
     id::Int
     # stream_time_type::Int   # stream的时间类型:事件时间,进入时间,处理时间
-    outputType
+    outputType    # output的数据类型
     parallelism::Int   # 并行度
     args::Dict{Symbol, Any}
 end
@@ -27,12 +27,5 @@ mutable struct OneInputTransformation <: Transformation
     Operator::Operator
 end
 
-
-
-
-"""
-
-
-"""
 
 

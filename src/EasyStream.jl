@@ -3,20 +3,25 @@ module EasyStream
 using CSV
 using DataFrames
 
-include("connector.jl")
 
 include("env.jl")
+
+include("stream.jl")
+
+include("transformation.jl")
+
+include("connector.jl")
 
 include("event.jl")
 
 include("operators.jl")
 include("op_1.jl")
 
-include("transformation.jl")
-
-include("stream.jl")
+include("function.jl")
 
 include("element.jl")
+
+include("dag.jl")
 
 include("others.jl")
 

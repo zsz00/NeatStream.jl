@@ -109,6 +109,8 @@ function test_5()
 
     path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"
     data_stream_source = readTextFile(env, path)
+    data = [1,2,3,4,5,6,7,8,9,10]
+    from_elements(env, data)
     data_stream = DataSteam(env, transform)
 
     data_stream = union(data_stream_source, data_stream)

@@ -81,7 +81,7 @@ end
 increment(stream::AbstractStream) = increment(stream.event)
 
 
-# streamz
+
 mutable struct MapedStream <: AbstractStream
     name::String
     current_value
@@ -113,7 +113,7 @@ end
 
 
 
-function Base.iterate(stream::Stream, data::Any, asynchronous::Bool=false)::IterativeStream
+function Base.iterate(stream::DataSteam, data::Any, asynchronous::Bool=false)::IterativeStream
     # data = next(stream.connector)
     apply!(Operators(stream.operators), data, stream.event)
     return (stream, data)
@@ -134,7 +134,7 @@ end
         A reference counter used to check when data is done
 
 """
-function _emit(stream::Stream, x, metadata)
+function _emit(stream::DataSteam, x, metadata)
     if isnothing(metadata) 
         metadata = []
     end
@@ -156,51 +156,66 @@ function _emit(stream::Stream, x, metadata)
     return [element for element in result if !isnothing(element)]
 end
 
-function keyby(stream::Stream, key::String)::KeyedStream   
+
+function keyby(stream::DataSteam, key::String)::KeyedStream   
 end
 
-function groupby(stream::Stream, group::Any)::Stream
+function groupby(stream::DataSteam, group::Any)::DataSteam
     
 end
 
 # 数据库中的join操作
-function join(stream::Stream, other_stream::Stream)::JoinedStream 
+function join(stream::DataSteam, other_stream::DataSteam)::JoinedStream 
     
 end
 
 # combine
-function union(stream::Stream, other_stream::Stream)::Stream
-    
-end
-function split(stream::Stream)::SplitStream
+function union(stream::DataSteam, other_stream::DataSteam)::DataSteam
     
 end
 
-function map(strean::Stream, func::Function, x, args)::MapedStream
-    data_out = func(x, args)
+function split(stream::DataSteam)::SplitStream
     
-    transform(stream, "map", output_type, (OneInputStreamOperator)operator)
-    # return (stream, data_out)
 end
 
-function process(stream::Stream, process_func::processFunction)::Stream
+function map(strean::DataSteam, func::Function)::MapedStream
+
+    operator::MapOperator = MapOperator(func)
+    stream = transform(stream, "map", output_type, operator)
+    return stream
+end
+
+# stream绑定op, 处理数据
+function process(stream::DataSteam, process_func::ProcessFunction)::SingleOutputStreamOperator <: DataSteam
     output_type = []
-    process_operator = ProcessOperator(stream, process_func)
-    transform(stream, "process", output_type, process_operator)
+    process_operator::ProcessOperator = ProcessOperator(stream, process_func)  # op上绑定func
+    stream = transform(stream, "process", output_type, process_operator)   # stream上绑定op
+    return stream
 end
 
-function filter(stream::Stream, filter_func::Function)::Stream
+function filter(stream::DataSteam, filter_func::Function)::DataSteam
     outputType = []
     filter_operator = FilterOperator(stream, filter_func)
     transform(stream, "filter", output_type, filter_operator)
 end
 
-function connect(env::Environment, stream::Stream)::ConnectedStream   
-end
-
-function add_sink(stream::Stream, f::Function)::DataStreamSink
+# flink 废弃了, 可以把Transducer的加进来
+function fold(stream::DataSteam)::DataSteam
     
 end
+
+function connect(env::Environment, stream::DataSteam)::ConnectedStream   
+end
+
+function print(stream::DataSteam)::DataSteam
+    print_stream = map(stream, print)
+    return print_stream
+end
+
+function add_sink(stream::DataSteam, f::Function)::DataStreamSink
+    
+end
+
 
 
 
@@ -247,11 +262,10 @@ function listen(stream::BatchStream)::DataFrame
 end
 
 
+"""
+flink.DataStream.class 
 
-
-
-
-
+"""
 
 #=
 2021.8.13 
@@ -285,3 +299,4 @@ ops 之间用 queue
 op 中用并行
 
 =#
+

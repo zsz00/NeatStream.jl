@@ -34,29 +34,38 @@ end
 
 
 mutable struct ProcessOperator <: AbstractStreamOperator
-    Timestamped_Collector:Array
-    context
-    currentWatermark::Int
+    process_func::ProcessFunction
+    # Timestamped_Collector:Array
+    # context
+    # currentWatermark::Int
 end
 
 function ProcessOperator()
     
 end
 
-function processElement(process_op::ProcessOperator, element::StreamRecord)
-    
+function processElement(process_op::ProcessOperator, element::StreamRecord)::StreamRecord
+    output = processElement(process_op.process_func, element)
+    return output
 end
 
 function processWatermark(process_op::ProcessOperator)
     
 end
 
-mutable struct FilterOperator <: AbstractStreamOperator
+mutable struct MapOperator <: AbstractStreamOperator
     filter_func
 end
 
-function FilterOperator()
-    
+function processElement(map_op::MapOperator, element::StreamRecord)::StreamRecord
+    data = map_op.filter_func(element)
+    return data
+end
+
+
+
+mutable struct FilterOperator <: AbstractStreamOperator
+    filter_func
 end
 
 function processElement(filter_op::FilterOperator, element::StreamRecord)
