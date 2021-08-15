@@ -3,7 +3,7 @@ abstract type AbstractStreamOperator end    # not <: DataStream
 
 
 mutable struct StreamOperator <: AbstractStreamOperator
-    config::StreamConfig
+    config::String   # StreamConfig
     output::StreamRecord
     state::Dict{Symbol, Any}
     # runtimeContext::StreamingRuntimeContext

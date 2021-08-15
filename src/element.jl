@@ -5,7 +5,6 @@ abstract type AbstractElement end
 mutable struct StreamElement <: AbstractElement
 end
 
-
 mutable struct StreamRecord <: AbstractElement
     value
     timestamp::Int
@@ -20,8 +19,6 @@ end
 function getValue(record::StreamRecord)
     return record.value
 end
-
-
 
 
 

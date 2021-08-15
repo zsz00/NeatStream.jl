@@ -1,3 +1,4 @@
+include("env.jl")
 
 abstract type AbstractStream end
 
@@ -81,6 +82,13 @@ end
 increment(stream::AbstractStream) = increment(stream.event)
 
 
+mutable struct DataStreamSource<:AbstractStream
+    env::Environment
+    outTypeInfo 
+    operator::Operator
+    isParallel::Bool
+    source_name::String
+end
 
 mutable struct MapedStream <: AbstractStream
     name::String

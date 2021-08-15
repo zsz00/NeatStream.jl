@@ -1,6 +1,8 @@
 
 # StreamExecutionEnvironment
-mutable struct Environment
+abstract type AbstractEnvironment end
+
+mutable struct Environment <: AbstractEnvironment
     job_name::Sting
     # stream_time_type::Int   # stream的时间类型:事件时间,进入时间,处理时间
     transformations::Array{Transformation}
@@ -17,18 +19,14 @@ function configure(env::Environment, args::Dict{Symbol, Any})
     end
 end
 
-mutable struct DataStreamSource<:DataSteam
-    env::Environment
-    outTypeInfo 
-    operator::Operator
-    isParallel::Bool
-    source_name::String
-end
+
 
 # 注册op到env
 function add_operator(env::Environment, transformation::Transformation)
     push!(env.transformations, transformation)
 end 
+
+
 
 function from_elements(env::Environment, data)::DataStreamSource
     

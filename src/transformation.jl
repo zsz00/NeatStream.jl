@@ -1,6 +1,8 @@
 
-mutable struct Transformation
-    name::Sting
+abstract type AbstractTransformation end
+
+mutable struct Transformation <: AbstractTransformation
+    name::String
     id::Int
     # stream_time_type::Int   # stream的时间类型:事件时间,进入时间,处理时间
     outputType    # output的数据类型
@@ -22,9 +24,9 @@ function set_parallelism(transform::Transformation, parallelism::Int=1)
     transform.parallelism = parallelism
 end
 
-mutable struct OneInputTransformation <: Transformation
+mutable struct OneInputTransformation <: AbstractTransformation
     input::Transformation
-    Operator::Operator
+    Operator::StreamOperator
 end
 
 

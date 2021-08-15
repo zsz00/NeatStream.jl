@@ -109,8 +109,8 @@ function test_5()
 
     path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"
     data_stream_source = readTextFile(env, path)
-    data = [1,2,3,4,5,6,7,8,9,10]
-    from_elements(env, data)
+    # data = [1,2,3,4,5,6,7,8,9,10]
+    # data_stream = from_elements(env, data)
     data_stream = DataSteam(env, transform)
 
     data_stream = union(data_stream_source, data_stream)
@@ -125,9 +125,32 @@ function test_5()
 end
 
 
+function test_5_2()
+    # demo
+    args_default = Dict("stream_time_type"=>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
+    env = Environment("test_job", args_default)
+
+    # path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"
+    # data_stream_source = readTextFile(env, path)
+    data = [1,2,3,4,5,6,7,8,9,10]
+    data_stream = from_elements(env, data)
+    # data_stream = DataSteam(env, transform)
+    # data_stream = union(data_stream_source, data_stream)
+
+    print(data_stream)
+
+    # data_stream = map(data_stream, parse_func)
+    # data_stream = process(data_stream, hac_func)
+    # add_sink(data_stream, print)
+
+    execute(env, "test_job")
+    
+end
 
 
-test_3()
+# test_3()
+test_5_2()
+
 
 
 #=
