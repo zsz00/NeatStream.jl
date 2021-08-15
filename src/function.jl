@@ -3,7 +3,7 @@ abstract type AbstractRichsFunction end
 
 mutable struct ProcessFunction <: AbstractRichsFunction
     func::Function
-    config::StreamConfig
+    config::String   # StreamConfig
     output::StreamRecord
 
 end
@@ -15,12 +15,12 @@ function processElement(process_func::ProcessFunction, element::StreamRecord)::S
 end
 
 
-mutable struct FromElementsFunction <: SourceFunction
+mutable struct SourceFunction <: AbstractRichsFunction
+
+end
+
+mutable struct FromElementsFunction <: AbstractRichsFunction
 
 end
 
 
-"""
-
-
-"""

@@ -3,15 +3,14 @@ module EasyStream
 using CSV
 using DataFrames
 
+include("event.jl")
 include("element.jl")
+include("function.jl")
 include("operators.jl")
 include("transformation.jl")
+include("dag.jl")
 include("env.jl")
 include("stream.jl")
-
-
-include("function.jl")
-include("dag.jl")
 
 include("others.jl")
 include("datasets.jl")
@@ -19,11 +18,11 @@ include("drifts.jl")
 
 
 include("connector.jl")
-include("event.jl")
 
 
 
-export clear!, reset!
+
+export Environment, from_elements, execute
 
 end # module
 

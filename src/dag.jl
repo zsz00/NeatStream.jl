@@ -2,38 +2,37 @@
 abstract type AbstractDag end   
 abstract type AbstractPipeline end 
 
-
 mutable struct StreamGraph <: AbstractPipeline
     jobName::String
-    executionConfig::ExecutionConfig 
-    checkpointConfig::CheckpointConfig
+    executionConfig::Dict{Symbol, Any}   # ExecutionConfig 
+    checkpointConfig::Dict{Symbol, Any}  # CheckpointConfig
     # output::StreamRecord
     scheduleMode::String  # EAGER
     chaining::Bool
     timeCharacteristic::String
-    streamNodes::Dict{Symbol, StreamNode}
+    streamNodes::Dict{Symbol, Any}  # StreamNode
     stateBackend::String
     # iterationSourceSinkPairs
     # sources::Set
     # sinks::Set
-
 end
 
-mutable struct StreamGraphGenerator
+mutable struct StreamGraphGenerator <: AbstractPipeline
     jobName::String
     defulte_job_name::String
     transformations::Array
-    executionConfig::ExecutionConfig 
-    checkpointConfig::CheckpointConfig
+    executionConfig::Dict{Symbol, Any}   # ExecutionConfig 
+    checkpointConfig::Dict{Symbol, Any}  # CheckpointConfig
     # output::StreamRecord
     scheduleMode::String
     chaining::Bool
     timeCharacteristic::String
-    streamNodes::Dict{Symbol, StreamNode}
+    streamNodes::Dict{Symbol, Any}
     stateBackend::String
     streamGraph::StreamGraph
     alreadyTransformed::Dict
 end
+
 
 function generate(sgg::StreamGraphGenerator)::StreamGraph
     streamGraph = StreamGraph(sgg)
@@ -68,11 +67,11 @@ end
 
 
 
-"""
+#=
 \flink\streaming\api\graph.*
 StreamGraph()
 StreamGraphGenerator()
 
-"""
+=#
 
 

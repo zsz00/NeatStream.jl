@@ -17,21 +17,23 @@ end
 mutable struct UdfStreamOperator <: AbstractStreamOperator
 end
 
-mutable struct StreamSource <: AbstractStreamOperator
-end
-
 mutable struct OneInputStreamOperator <: AbstractStreamOperator
 end
 
-mutable struct SingleOutputStreamOperator <: DataSteam
-
-end
 
 
 function initializeState(stream_op::StreamOperator, context)
     
 end
 
+
+mutable struct StreamSourceOperator <: AbstractStreamOperator
+    func
+end
+function processElement(op::StreamSourceOperator, element::StreamRecord)::StreamRecord
+    data = op.func(element)
+    return data
+end
 
 mutable struct ProcessOperator <: AbstractStreamOperator
     process_func::ProcessFunction
@@ -54,11 +56,11 @@ function processWatermark(process_op::ProcessOperator)
 end
 
 mutable struct MapOperator <: AbstractStreamOperator
-    filter_func
+    map_func
 end
 
 function processElement(map_op::MapOperator, element::StreamRecord)::StreamRecord
-    data = map_op.filter_func(element)
+    data = map_op.map_func(element)
     return data
 end
 
