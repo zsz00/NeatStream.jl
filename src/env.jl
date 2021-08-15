@@ -40,6 +40,8 @@ end
 
 function from_table(env::Environment, data)::DataStreamSource
     Tables.rows(data)
+
+    transform()
 end
 
 # ????? 卡着了
@@ -49,15 +51,19 @@ function readTextFile(env::Environment, path::String)::DataStreamSource
     operator 
     source_name = "readTextFile"
     outTypeInfo = ""
+
     data_stream_source = add_source(env, outTypeInfo, operator, source_name)
 
-    data_stream_source = transform(data_stream_source, "Split_Reader", typeInfo, factory)
+    data_stream_source = transform(data_stream_source, "Split_Reader", typeInfo, operator)
     return data_stream_source
 end
 
 function add_source(env::Environment, outTypeInfo, operator, source_name)::DataStreamSource
     is_parallel = false
-    data_stream_source = DataStreamSource(env, outTypeInfo, operator, is_parallel, source_name)
+    source_operator = StreamSource(func)
+    data_stream_source = transform(data_stream_source, "Split_Reader", typeInfo, operator)
+    
+    # data_stream_source = DataStreamSource(env, outTypeInfo, operator, is_parallel, source_name)
     return data_stream_source
 end
 
