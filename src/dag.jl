@@ -4,13 +4,13 @@ abstract type AbstractPipeline end
 
 mutable struct StreamGraph <: AbstractPipeline
     jobName::String
-    executionConfig::Dict{Symbol, Any}   # ExecutionConfig 
-    checkpointConfig::Dict{Symbol, Any}  # CheckpointConfig
+    executionConfig::Dict{String, Any}   # ExecutionConfig 
+    checkpointConfig::Dict{String, Any}  # CheckpointConfig
     # output::StreamRecord
     scheduleMode::String  # EAGER
     chaining::Bool
     timeCharacteristic::String
-    streamNodes::Dict{Symbol, Any}  # StreamNode
+    streamNodes::Dict{String, Any}  # StreamNode
     stateBackend::String
     # iterationSourceSinkPairs
     # sources::Set
@@ -21,13 +21,13 @@ mutable struct StreamGraphGenerator <: AbstractPipeline
     jobName::String
     defulte_job_name::String
     transformations::Array
-    executionConfig::Dict{Symbol, Any}   # ExecutionConfig 
-    checkpointConfig::Dict{Symbol, Any}  # CheckpointConfig
+    executionConfig::Dict{String, Any}   # ExecutionConfig 
+    checkpointConfig::Dict{String, Any}  # CheckpointConfig
     # output::StreamRecord
     scheduleMode::String
     chaining::Bool
     timeCharacteristic::String
-    streamNodes::Dict{Symbol, Any}
+    streamNodes::Dict{String, Any}
     stateBackend::String
     streamGraph::StreamGraph
     alreadyTransformed::Dict

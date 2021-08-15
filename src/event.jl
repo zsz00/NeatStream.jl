@@ -1,7 +1,7 @@
 mutable struct Event
     process_time::Int
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
-Event(args::Dict{Symbol, Any}) = Event(0, args)
+Event(args::Dict{String, Any}) = Event(0, args)
 

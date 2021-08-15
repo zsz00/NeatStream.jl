@@ -6,19 +6,18 @@ mutable struct Environment <: AbstractEnvironment
     job_name::String
     # stream_time_type::Int   # stream的时间类型:事件时间,进入时间,处理时间
     transformations::Array{Transformation}
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
-args_default = Dict(:stream_time_type =>1, :defaultLocalParallelism=>1, :defaultStateBackend=>"")
-Environment(name::String, args::Dict{Symbol, Any}) = Environment(name, [], args)
+args_default = Dict("stream_time_type" =>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
+Environment(name::String, args::Dict{String, Any}) = Environment(name, [], args)
 
 
-function configure(env::Environment, args::Dict{Symbol, Any})
+function configure(env::Environment, args::Dict{String, Any})
     for (k, v) in args
         env.args.k = v
     end
 end
-
 
 
 # 注册op到env
@@ -32,6 +31,7 @@ function from_elements(env::Environment, data)::DataStreamSource
     source_name = "from_elements"
     outTypeInfo = Int
     func = println
+    env.args["data"] = data
     data_stream_source = add_source(env, outTypeInfo, func, source_name)
     return data_stream_source
 end
@@ -73,12 +73,16 @@ function from_source(env::Environment, f::Function)::DataStreamSource
     
 end
 
-function execute(env::Environment, stream_graph::StreamGraph)::JobExecutionResult
+function execute(env::Environment, stream_graph::StreamGraph)
     execute(streamGraph, env.configuration)
 
 end
-function execute(env::Environment, job_name::String)::JobExecutionResult
-    
+function execute(env::Environment, job_name::String)
+    data = env.args["data"]
+    for d in data
+        println(d)
+    end
+
 end
 
 function getStreamGraph(env::Environment, jobName::String, clearTransformations::Bool)::StreamGraph

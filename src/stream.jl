@@ -1,7 +1,7 @@
 
 abstract type AbstractStream end
 
-# 数据流的结构, stream的state, context
+# 数据流的结构, stream的state, context. treamz
 mutable struct Stream <: AbstractStream
     name::String
     # context::RuntimeContext
@@ -11,7 +11,7 @@ mutable struct Stream <: AbstractStream
     upstreams::Array
     downstreams::Set
     parallelism::Int
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 mutable struct DataSteam <: AbstractStream
@@ -95,27 +95,27 @@ mutable struct MapedStream <: AbstractStream
     current_metadata
     upstream
     upstreams::Array
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 mutable struct ConnectedStream <: AbstractStream
     name::String
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 mutable struct KeyedStream <: AbstractStream
     name::String
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 mutable struct JoinedStream <: AbstractStream
     name::String
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 mutable struct IterativeStream <: AbstractStream
     name::String
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 mutable struct SingleOutputStreamOperator <: AbstractStream

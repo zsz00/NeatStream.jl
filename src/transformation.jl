@@ -7,14 +7,14 @@ mutable struct Transformation <: AbstractTransformation
     # stream_time_type::Int   # stream的时间类型:事件时间,进入时间,处理时间
     outputType    # output的数据类型
     parallelism::Int   # 并行度
-    args::Dict{Symbol, Any}
+    args::Dict{String, Any}
 end
 
 args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
-Transformation(args::Dict{Symbol, Any}) = Transformation("map", 1, [], 1, args)
+Transformation(args::Dict{String, Any}) = Transformation("map", 1, [], 1, args)
 
 
-function configure(transform::Transformation, args::Dict{Symbol, Any})
+function configure(transform::Transformation, args::Dict{String, Any})
     for (k, v) in args
         env.args.k = v
     end

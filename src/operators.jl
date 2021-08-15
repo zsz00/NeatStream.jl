@@ -5,7 +5,7 @@ abstract type AbstractStreamOperator end    # not <: DataStream
 mutable struct StreamOperator <: AbstractStreamOperator
     config::String   # StreamConfig
     output::StreamRecord
-    state::Dict{Symbol, Any}
+    state::Dict{String, Any}
     # runtimeContext::StreamingRuntimeContext
     # stateKeySelector1::KeySelector<?, ?>
     # stateHandler::StreamOperatorStateHandler
@@ -34,6 +34,12 @@ function processElement(op::StreamSourceOperator, element::StreamRecord)::Stream
     data = op.func(element)
     return data
 end
+
+# function Base.iterate(op::StreamSourceOperator, state = 1)
+#     data = processElement(op, element)   # stream -> df
+#     out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
+#     return out_data
+# end
 
 mutable struct ProcessOperator <: AbstractStreamOperator
     process_func::ProcessFunction

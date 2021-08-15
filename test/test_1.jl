@@ -127,7 +127,7 @@ end
 
 function test_5_2()
     # demo
-    args_default = Dict(:stream_time_type =>1, :defaultLocalParallelism=>1, :defaultStateBackend=>"")
+    args_default = Dict("stream_time_type" =>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
     env = Environment("test_job", args_default)
 
     data = [1,2,3,4,5,6,7,8,9,10]
