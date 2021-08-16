@@ -10,9 +10,14 @@ mutable struct Transformation <: AbstractTransformation
     args::Dict{String, Any}
 end
 
+mutable struct OneInputTransformation <: AbstractTransformation
+    input::Transformation
+    Operator::StreamOperator
+end
+
+
 args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
 Transformation(args::Dict{String, Any}) = Transformation("map", 1, [], 1, args)
-
 
 function configure(transform::Transformation, args::Dict{String, Any})
     for (k, v) in args
@@ -24,10 +29,7 @@ function set_parallelism(transform::Transformation, parallelism::Int=1)
     transform.parallelism = parallelism
 end
 
-mutable struct OneInputTransformation <: AbstractTransformation
-    input::Transformation
-    Operator::StreamOperator
-end
+
 
 
 

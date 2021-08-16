@@ -111,7 +111,7 @@ function test_5()
     data_stream_source = readTextFile(env, path)
     # data = [1,2,3,4,5,6,7,8,9,10]
     # data_stream = from_elements(env, data)
-    data_stream = DataSteam(env, transform)
+    data_stream = DataStream(env, transform)
 
     data_stream = union(data_stream_source, data_stream)
 
@@ -132,7 +132,7 @@ function test_5_2()
 
     data = [1,2,3,4,5,6,7,8,9,10]
     data_stream = from_elements(env, data)
-    # data_stream = DataSteam(env, transform)
+    # data_stream = DataStream(env, transform)
     # data_stream = union(data_stream_source, data_stream)
 
     println(data_stream)

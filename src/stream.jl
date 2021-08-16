@@ -1,35 +1,22 @@
 
 abstract type AbstractStream end
 
-# 数据流的结构, stream的state, context. treamz
-mutable struct Stream <: AbstractStream
-    name::String
-    # context::RuntimeContext
-    current_value
-    current_metadata
-    upstream
-    upstreams::Array
-    downstreams::Set
-    parallelism::Int
-    args::Dict{String, Any}
-end
-
-mutable struct DataSteam <: AbstractStream
+mutable struct DataStream <: AbstractStream
     environment::Environment 
     transformation::Transformation  # map, start, keyby, filter, process 这些都是 转换 
 end
 
-DataSteam(env,transform=[]) = DataSteam(env, transform)
+DataStream(env,transform=[]) = DataStream(env, transform)
 
 
 # 注册op到stream上. *****
-function transform(stream::DataSteam, operator_name::String, output_type, operator::OneInputStreamOperator)::DataSteam
+function transform(stream::DataStream, operator_name::String, output_type, operator::OneInputStreamOperator)::DataStream
 
     args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
     transform = Transformation(operator_name, 1, output_type, 1, args_default)
     transform = OneInputTransformation(transform, operator)
 
-    stream.transformation = transform             # 注册op到stream上,无operator
+    stream.transformation = transform             # 注册op到stream上
     add_operator(stream.environment, transform)   # 注册op到env
     return stream
 end
@@ -58,7 +45,6 @@ function clear!(stream::AbstractStream)
     for i = 1:length(stream.operators)
         pop!(stream.operators)
     end
-
     return nothing
 end
 
@@ -114,14 +100,14 @@ mutable struct JoinedStream <: AbstractStream
 end
 
 mutable struct IterativeStream <: AbstractStream
-    name::String
-    args::Dict{String, Any}
+    originalInput::DataStream
+    maxWaitTime::Int
 end
 
 mutable struct SingleOutputStreamOperator <: AbstractStream
 end
 
-function Base.iterate(stream::DataSteam, data::Any, asynchronous::Bool=false)::IterativeStream
+function Base.iterate(stream::DataStream, data::Any, asynchronous::Bool=false)::IterativeStream
     # data = next(stream.connector)
     apply!(Operators(stream.operators), data, stream.event)
     return (stream, data)
@@ -142,7 +128,7 @@ end
         A reference counter used to check when data is done
 
 """
-function _emit(stream::DataSteam, x, metadata)
+function _emit(stream::DataStream, x, metadata)
     if isnothing(metadata) 
         metadata = []
     end
@@ -165,79 +151,77 @@ function _emit(stream::DataSteam, x, metadata)
 end
 
 
-function keyby(stream::DataSteam, key::String)::KeyedStream   
+function keyby(stream::DataStream, key::String)::KeyedStream   
 end
 
-function groupby(stream::DataSteam, group::Any)::DataSteam
+function groupby(stream::DataStream, group::Any)::DataStream
     
 end
 
 # 数据库中的join操作
-function join(stream::DataSteam, other_stream::DataSteam)::JoinedStream 
+function join(stream::DataStream, other_stream::DataStream)::JoinedStream 
     
 end
 
 # combine
-function union(stream::DataSteam, other_stream::DataSteam)::DataSteam
+function union(stream::DataStream, other_stream::DataStream)::DataStream
     
 end
 
-function split(stream::DataSteam)::SplitStream
+function split(stream::DataStream)::SplitStream
     
 end
 
-function map(strean::DataSteam, func::Function)::MapedStream
-
+function map(strean::DataStream, func::Function)::MapedStream
     operator::MapOperator = MapOperator(func)
     stream = transform(stream, "map", output_type, operator)
     return stream
 end
 
 # stream绑定op, 处理数据
-function process(stream::DataSteam, process_func::ProcessFunction)::SingleOutputStreamOperator <: DataSteam
+function process(stream::DataStream, process_func::ProcessFunction)::SingleOutputStreamOperator <: DataStream
     output_type = []
-    process_operator::ProcessOperator = ProcessOperator(stream, process_func)  # op上绑定func
+    process_operator::ProcessOperator = ProcessOperator(process_func)  # op上绑定func
     stream = transform(stream, "process", output_type, process_operator)   # stream上绑定op
     return stream
 end
 
-function filter(stream::DataSteam, filter_func::Function)::DataSteam
+function filter(stream::DataStream, filter_func::Function)::DataStream
     outputType = []
-    filter_operator = FilterOperator(stream, filter_func)
+    filter_operator = FilterOperator(filter_func)
     transform(stream, "filter", output_type, filter_operator)
 end
 
 # flink 废弃了, 可以把Transducer的加进来
-function fold(stream::DataSteam)::DataSteam
+function fold(stream::DataStream)::DataStream
     
 end
 
-function connect(env::Environment, stream::DataSteam)::ConnectedStream   
+function connect(env::Environment, stream::DataStream)::ConnectedStream   
 end
 
-function print(stream::DataSteam)::DataSteam
+function print(stream::DataStream)::DataStream
     print_stream = map(stream, print)
     return print_stream
 end
 
-function add_sink(stream::DataSteam, f::Function)::DataStreamSink
+function add_sink(stream::DataStream, f::Function)::DataStreamSink
     
 end
 
 
 
-"""
+#=
 flink.DataStream.class 
 
-"""
+=#
 
 #=
 2021.8.13 
 \streamz\core.py
 \org\apache\flink\streaming\api\datastream\DataStream.class
 
-
-
+------------------------
 stream:
 
 Transducers.jl/Chain.jl/FP

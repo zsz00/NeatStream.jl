@@ -31,7 +31,7 @@ stream
 op(stat,data) -> stat,data
 数据和状态都要 在ops 之间传输 
 
-
+ops之间可以用queue吗? 不行.
 
 
 1. 设计 api, 参考的flink 

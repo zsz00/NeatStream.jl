@@ -1,3 +1,17 @@
+abstract type AbstractStream end
+
+# 数据流的结构, stream的state, context. treamz
+mutable struct Stream <: AbstractStream
+    name::String
+    # context::RuntimeContext
+    current_value
+    current_metadata
+    upstream
+    upstreams::Array
+    downstreams::Set
+    parallelism::Int
+    args::Dict{String, Any}
+end
 
 function Base.iterate(stream::AbstractStream, state = 1)
     data = listen(stream)   # stream -> df

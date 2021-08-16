@@ -5,8 +5,9 @@ abstract type AbstractStreamOperator end    # not <: DataStream
 mutable struct StreamOperator <: AbstractStreamOperator
     config::String   # StreamConfig
     output::StreamRecord
+    # element::StreamRecord   # runtimeContext
     state::Dict{String, Any}
-    # runtimeContext::StreamingRuntimeContext
+    # runtimeContext::StreamingRuntimeContext   # current element
     # stateKeySelector1::KeySelector<?, ?>
     # stateHandler::StreamOperatorStateHandler
     # processingTimeService::ProcessingTimeService
@@ -18,18 +19,16 @@ mutable struct UdfStreamOperator <: AbstractStreamOperator
 end
 
 mutable struct OneInputStreamOperator <: AbstractStreamOperator
+    config::String   # StreamConfig
+    output::StreamRecord  
+    element::StreamRecord   # input, runtimeContext
+    state::Dict{String, Any}
 end
-
-
-
-function initializeState(stream_op::StreamOperator, context)
-    
-end
-
 
 mutable struct StreamSourceOperator <: AbstractStreamOperator
     func
 end
+
 function processElement(op::StreamSourceOperator, element::StreamRecord)::StreamRecord
     data = op.func(element)
     return data
@@ -41,15 +40,15 @@ end
 #     return out_data
 # end
 
+function initializeState(stream_op::StreamOperator, context)
+end
+
+
 mutable struct ProcessOperator <: AbstractStreamOperator
     process_func::ProcessFunction
     # Timestamped_Collector:Array
     # context
     # currentWatermark::Int
-end
-
-function ProcessOperator()
-    
 end
 
 function processElement(process_op::ProcessOperator, element::StreamRecord)::StreamRecord
@@ -61,6 +60,7 @@ function processWatermark(process_op::ProcessOperator)
     
 end
 
+
 mutable struct MapOperator <: AbstractStreamOperator
     map_func
 end
@@ -69,7 +69,6 @@ function processElement(map_op::MapOperator, element::StreamRecord)::StreamRecor
     data = map_op.map_func(element)
     return data
 end
-
 
 
 mutable struct FilterOperator <: AbstractStreamOperator
@@ -81,4 +80,7 @@ function processElement(filter_op::FilterOperator, element::StreamRecord)
 
 end
 
+function setKeyContextElement(op::OneInputStreamOperator, record::StreamRecord)
+    op.element = record
+end
 

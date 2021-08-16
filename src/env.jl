@@ -26,7 +26,6 @@ function add_operator(env::Environment, transformation::Transformation)
 end 
 
 
-
 function from_elements(env::Environment, data)::DataStreamSource
     source_name = "from_elements"
     outTypeInfo = Int
@@ -70,20 +69,26 @@ function add_source(env::Environment, outTypeInfo, func, source_name)::DataStrea
 end
 
 function from_source(env::Environment, f::Function)::DataStreamSource
-    
 end
 
 function execute(env::Environment, stream_graph::StreamGraph)
     execute(streamGraph, env.configuration)
-
 end
+
 function execute(env::Environment, job_name::String)
     data = env.args["data"]
-    for d in data
-        println(d)
-    end
 
+    while hasnext(stream.connector)   # 每个iter
+        data = next(stream.connector)
+        for tf in env.transformations   # map, process, 每个op.   
+            operator = tf.operator
+            # data = tf(op(process_element(data)))
+            data = process(operator, data)
+        end
+    end
+    return data
 end
+
 
 function getStreamGraph(env::Environment, jobName::String, clearTransformations::Bool)::StreamGraph
     streamGraph::StreamGraph = generate(env.getStreamGraphGenerator(jobName))
