@@ -27,6 +27,7 @@ end
 
 
 function from_elements(env::Environment, data)::DataStreamSource
+    # 先把[1,2,3] 遍历一遍, 并都存放到FromElementsFunction.ctx里. 
     source_name = "from_elements"
     outTypeInfo = Int
     func = println
@@ -60,8 +61,10 @@ end
 
 function add_source(env::Environment, outTypeInfo, func, source_name)::DataStreamSource
     is_parallel = false
-    source_operator = StreamSourceOperator(func)
-    data_stream_source = DataStreamSource(env, outTypeInfo, source_operator, is_parallel, source_name)
+    source_operator = StreamSourceOperator(func, [])  # func 转换为 op 
+    args = Dict("uid"=>1, "a"=>"")
+    transf = Transformation("add_source", args)
+    data_stream_source = DataStreamSource(env, transf, outTypeInfo, source_operator, is_parallel, source_name)
 
     # data_stream_source = transform(data_stream_source, source_name, outTypeInfo, source_operator)
     

@@ -26,7 +26,8 @@ mutable struct OneInputStreamOperator <: AbstractStreamOperator
 end
 
 mutable struct StreamSourceOperator <: AbstractStreamOperator
-    func
+    func::Function    # SourceFunction
+    ctx::Any  # SourceContext
 end
 
 function processElement(op::StreamSourceOperator, element::StreamRecord)::StreamRecord

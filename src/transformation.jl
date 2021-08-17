@@ -17,7 +17,8 @@ end
 
 
 args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
-Transformation(args::Dict{String, Any}) = Transformation("map", 1, [], 1, args)
+Transformation(name::String, args::Dict{String, Any}) = Transformation(name, 1, [], 1, args)
+
 
 function configure(transform::Transformation, args::Dict{String, Any})
     for (k, v) in args

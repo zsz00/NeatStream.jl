@@ -68,7 +68,8 @@ increment(stream::AbstractStream) = increment(stream.event)
 
 
 mutable struct DataStreamSource<:AbstractStream
-    env::Environment
+    environment::Environment 
+    transformation::Transformation
     outTypeInfo 
     operator::StreamSourceOperator
     isParallel::Bool
@@ -105,6 +106,8 @@ mutable struct IterativeStream <: AbstractStream
 end
 
 mutable struct SingleOutputStreamOperator <: AbstractStream
+    environment::Environment 
+    transformation::Transformation 
 end
 
 function Base.iterate(stream::DataStream, data::Any, asynchronous::Bool=false)::IterativeStream
@@ -209,7 +212,9 @@ function add_sink(stream::DataStream, f::Function)::DataStreamSink
     
 end
 
-
+function getTransformation(stream::DataStream)
+    return stream.transformation
+end
 
 #=
 flink.DataStream.class 
