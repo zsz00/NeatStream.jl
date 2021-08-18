@@ -5,7 +5,7 @@ abstract type AbstractEnvironment end
 mutable struct Environment <: AbstractEnvironment
     job_name::String
     # stream_time_type::Int   # stream的时间类型:事件时间,进入时间,处理时间
-    transformations::Array{Transformation}
+    transformations::Array{Transformation}  # StreamSourceTransformation
     args::Dict{String, Any}
 end
 
@@ -37,7 +37,6 @@ function from_elements(env::Environment, data)::DataStreamSource
 end
 
 function from_collection(env::Environment, data)::DataStreamSource
-    
 end
 
 function from_table(env::Environment, data)::DataStreamSource
@@ -63,8 +62,13 @@ function add_source(env::Environment, outTypeInfo, func, source_name)::DataStrea
     is_parallel = false
     source_operator = StreamSourceOperator(func, [])  # func 转换为 op 
     args = Dict("uid"=>1, "a"=>"")
-    transf = Transformation("add_source", args)
-    data_stream_source = DataStreamSource(env, transf, outTypeInfo, source_operator, is_parallel, source_name)
+    transform = Transformation("add_source", args)
+    # transform = StreamSourceTransformation(transform, source_operator)  
+    data_stream_source = DataStreamSource(env, transform, outTypeInfo, source_operator, is_parallel, source_name)
+    
+    stream = data_stream_source
+    stream.transformation = transform             # 注册op到stream上
+    add_operator(stream.environment, transform)   # 注册op到env
 
     # data_stream_source = transform(data_stream_source, source_name, outTypeInfo, source_operator)
     
@@ -79,14 +83,15 @@ function execute(env::Environment, stream_graph::StreamGraph)
 end
 
 function execute(env::Environment, job_name::String)
-    data = env.args["data"]
-
-    while hasnext(stream.connector)   # 每个iter
-        data = next(stream.connector)
-        for tf in env.transformations   # map, process, 每个op.   
+    # data = env.args["data"]
+    println(env.transformations[1])
+    stream_source = env.transformations[1]
+    while hasnext(stream_source.connector)   # 每个iter
+        data = next(stream_source.connector)
+        for tf in env.transformations[2:end]   # map, process, 每个op.  
+            # data = tf(op(process_element(data))) 
             operator = tf.operator
-            # data = tf(op(process_element(data)))
-            data = process(operator, data)
+            data = processElement(operator, data)
         end
     end
     return data

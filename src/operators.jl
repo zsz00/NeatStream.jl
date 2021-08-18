@@ -63,7 +63,7 @@ end
 
 
 mutable struct MapOperator <: AbstractStreamOperator
-    map_func
+    map_func::Function
 end
 
 function processElement(map_op::MapOperator, element::StreamRecord)::StreamRecord
@@ -78,7 +78,7 @@ end
 
 function processElement(filter_op::FilterOperator, element::StreamRecord)
     data = filter_op.filter_func(element)
-
+    return data
 end
 
 function setKeyContextElement(op::OneInputStreamOperator, record::StreamRecord)

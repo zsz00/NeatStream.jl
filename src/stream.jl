@@ -6,7 +6,14 @@ mutable struct DataStream <: AbstractStream
     transformation::Transformation  # map, start, keyby, filter, process 这些都是 转换 
 end
 
-DataStream(env,transform=[]) = DataStream(env, transform)
+mutable struct DataStreamSource<:AbstractStream
+    environment::Environment 
+    transformation::Transformation
+    outTypeInfo 
+    operator::StreamSourceOperator
+    isParallel::Bool
+    source_name::String
+end
 
 
 # 注册op到stream上. *****
@@ -14,7 +21,17 @@ function transform(stream::DataStream, operator_name::String, output_type, opera
 
     args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
     transform = Transformation(operator_name, 1, output_type, 1, args_default)
-    transform = OneInputTransformation(transform, operator)
+    transform = OneInputTransformation(transform, operator)  # op -> transform
+
+    stream.transformation = transform             # 注册op到stream上
+    add_operator(stream.environment, transform)   # 注册op到env
+    return stream
+end
+function transform(stream::DataStreamSource, operator_name::String, output_type, operator::StreamSourceOperator)::DataStreamSource
+
+    args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
+    transform = Transformation(operator_name, 1, output_type, 1, args_default)
+    transform = StreamSourceTransformation(transform, operator)  # op -> transform
 
     stream.transformation = transform             # 注册op到stream上
     add_operator(stream.environment, transform)   # 注册op到env
@@ -67,14 +84,6 @@ end
 increment(stream::AbstractStream) = increment(stream.event)
 
 
-mutable struct DataStreamSource<:AbstractStream
-    environment::Environment 
-    transformation::Transformation
-    outTypeInfo 
-    operator::StreamSourceOperator
-    isParallel::Bool
-    source_name::String
-end
 
 mutable struct MapedStream <: AbstractStream
     name::String
@@ -175,7 +184,8 @@ function split(stream::DataStream)::SplitStream
     
 end
 
-function map(strean::DataStream, func::Function)::MapedStream
+function map(stream::DataStream, func::Function)::MapedStream
+    output_type = Int
     operator::MapOperator = MapOperator(func)
     stream = transform(stream, "map", output_type, operator)
     return stream

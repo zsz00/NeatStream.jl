@@ -12,9 +12,13 @@ end
 
 mutable struct OneInputTransformation <: AbstractTransformation
     input::Transformation
-    Operator::StreamOperator
+    operator::StreamOperator
 end
 
+mutable struct StreamSourceTransformation <: AbstractTransformation
+    input::Transformation
+    operator::StreamSourceOperator
+end
 
 args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
 Transformation(name::String, args::Dict{String, Any}) = Transformation(name, 1, [], 1, args)

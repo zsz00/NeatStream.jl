@@ -124,6 +124,9 @@ function test_5()
     
 end
 
+function tt()
+    println("tt")
+end
 
 function test_5_2()
     # demo
@@ -132,12 +135,16 @@ function test_5_2()
 
     data = [1,2,3,4,5,6,7,8,9,10]
     data_stream = from_elements(env, data)
-    # data_stream = DataStream(env, transform)
+
+    args = Dict("uid"=>1, "a"=>"")
+    transform = Transformation("data_op", args)
+    data_stream_2 = DataStream(env, transform)
     # data_stream = union(data_stream_source, data_stream)
 
-    println(data_stream)
-
-    # data_stream = map(data_stream, parse_func)
+    println("data_stream_2:", data_stream_2)
+    parse_func = tt
+    data_stream = EasyStream.map(data_stream_2, parse_func)
+    println("data_stream:", data_stream)
     # data_stream = process(data_stream, hac_func)
     # add_sink(data_stream, print)
 

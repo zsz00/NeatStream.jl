@@ -22,7 +22,7 @@ include("connector.jl")
 
 
 
-export Environment, from_elements, execute
+export Environment, from_elements, execute, Transformation, DataStream, map, processElement
 
 end # module
 
