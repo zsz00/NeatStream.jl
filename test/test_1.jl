@@ -119,34 +119,44 @@ function test_5()
     data_stream = process(data_stream, hac_func)
     add_sink(data_stream, print)
 
-
     execute(env, "test_job")
     
 end
 
-function tt()
-    println("tt")
+function tt(data)
+    data = data + 1
+    return data
+end
+
+function hac(data, state)
+    data = data + 2
+    state["count"] += 1
+    # println("hac: ", data)
+    return data, state
 end
 
 function test_5_2()
     # demo
-    args_default = Dict("stream_time_type" =>1, "defaultLocalParallelism"=>1, "defaultStateBackend"=>"")
+    args_default = Dict("stream_time_type" =>1, "defaultLocalParallelism"=>1)
     env = Environment("test_job", args_default)
 
     data = [1,2,3,4,5,6,7,8,9,10]
     data_stream = from_elements(env, data)
 
-    args = Dict("uid"=>1, "a"=>"")
-    transform = Transformation("data_op", args)
-    data_stream_2 = DataStream(env, transform)
+    # op = ""
+    # transform = Transformation("data_op", op)
+    # data_stream_2 = DataStream(env, transform)
     # data_stream = union(data_stream_source, data_stream)
 
-    println("data_stream_2:", data_stream_2)
+    # println("data_stream_2:", data_stream_2)
     parse_func = tt
-    data_stream = EasyStream.map(data_stream_2, parse_func)
-    println("data_stream:", data_stream)
-    # data_stream = process(data_stream, hac_func)
+    data_stream = EasyStream.map(data_stream, "tt", parse_func)
+    
+    hac_func = ProcessFunction(hac)
+    state = Dict("count"=>0)
+    data_stream = process(data_stream, "hac", hac_func, state)
     # add_sink(data_stream, print)
+    # println("data_stream:", data_stream)
 
     execute(env, "test_job")
     

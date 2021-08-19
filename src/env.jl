@@ -26,13 +26,14 @@ function add_operator(env::Environment, transformation::Transformation)
 end 
 
 
-function from_elements(env::Environment, data)::DataStreamSource
+function from_elements(env::Environment, data::Any)::DataStreamSource
     # 先把[1,2,3] 遍历一遍, 并都存放到FromElementsFunction.ctx里. 
     source_name = "from_elements"
-    outTypeInfo = Int
+    op_name = "println"
     func = println
-    env.args["data"] = data
-    data_stream_source = add_source(env, outTypeInfo, func, source_name)
+    outTypeInfo = Int
+    # env.args["data"] = data
+    data_stream_source = add_source(env, outTypeInfo, func, source_name, op_name, data)
     return data_stream_source
 end
 
@@ -58,11 +59,11 @@ function readTextFile(env::Environment, path::String)::DataStreamSource
     return data_stream_source
 end
 
-function add_source(env::Environment, outTypeInfo, func, source_name)::DataStreamSource
+function add_source(env::Environment, outTypeInfo, func, source_name, op_name, data)::DataStreamSource
     is_parallel = false
-    source_operator = StreamSourceOperator(func, [])  # func 转换为 op 
-    args = Dict("uid"=>1, "a"=>"")
-    transform = Transformation("add_source", args)
+    source_operator = StreamSourceOperator(op_name, func, data)  # func 转换为 op 
+
+    transform = StreamSourceTransformation("add_source", source_operator)
     # transform = StreamSourceTransformation(transform, source_operator)  
     data_stream_source = DataStreamSource(env, transform, outTypeInfo, source_operator, is_parallel, source_name)
     
@@ -85,16 +86,31 @@ end
 function execute(env::Environment, job_name::String)
     # data = env.args["data"]
     println(env.transformations[1])
-    stream_source = env.transformations[1]
-    while hasnext(stream_source.connector)   # 每个iter
-        data = next(stream_source.connector)
+    stream_source_tf = env.transformations[1]
+    all_data = stream_source_tf.operator.data
+    # while true # hasnext(stream_source_tf.operator)   # 每个iter
+        # data = next(stream_source.operator)
+    for data in all_data   # data_loader
+        println("input: ", data)
         for tf in env.transformations[2:end]   # map, process, 每个op.  
-            # data = tf(op(process_element(data))) 
+            # data = tf(op(process_element(data)))  # 逻辑的
             operator = tf.operator
+            if isa(data, Int)
+                data = StreamRecord(data)
+            end
+            
             data = processElement(operator, data)
+
+            if isa(operator, ProcessOperator)
+                op_state = operator.state["count"]
+            else
+                op_state = 0
+            end
+            println(tf.name, ",", tf.operator.name, ", op_out:", data.value, ", op_state:", op_state)
         end
+        println("out: ", data.value)
     end
-    return data
+    # return data
 end
 
 

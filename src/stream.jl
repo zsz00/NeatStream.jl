@@ -1,12 +1,15 @@
 
 abstract type AbstractStream end
+abstract type AbstractDataStreamSource <: AbstractStream end
+abstract type AbstractMapedStream <: AbstractStream end
+
 
 mutable struct DataStream <: AbstractStream
     environment::Environment 
-    transformation::Transformation  # map, start, keyby, filter, process 这些都是 转换 
+    transformation::Transformation  # Transformation  # map, start, keyby, filter, process 这些都是 转换 
 end
 
-mutable struct DataStreamSource<:AbstractStream
+mutable struct DataStreamSource<:AbstractDataStreamSource
     environment::Environment 
     transformation::Transformation
     outTypeInfo 
@@ -17,11 +20,11 @@ end
 
 
 # 注册op到stream上. *****
-function transform(stream::DataStream, operator_name::String, output_type, operator::OneInputStreamOperator)::DataStream
+function transform(stream::AbstractStream, operator_name::String, output_type, operator::StreamOperator)::AbstractStream
 
-    args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
-    transform = Transformation(operator_name, 1, output_type, 1, args_default)
-    transform = OneInputTransformation(transform, operator)  # op -> transform
+    # args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
+    # transform = Transformation(operator_name, 1, output_type, 1, args_default)
+    transform = OneInputTransformation(operator_name, operator)  # op -> transform
 
     stream.transformation = transform             # 注册op到stream上
     add_operator(stream.environment, transform)   # 注册op到env
@@ -84,8 +87,7 @@ end
 increment(stream::AbstractStream) = increment(stream.event)
 
 
-
-mutable struct MapedStream <: AbstractStream
+mutable struct MapedStream <: AbstractMapedStream
     name::String
     current_value
     current_metadata
@@ -184,24 +186,24 @@ function split(stream::DataStream)::SplitStream
     
 end
 
-function map(stream::DataStream, func::Function)::MapedStream
+function map(stream::AbstractStream, name::String, func::Function)::AbstractStream
     output_type = Int
-    operator::MapOperator = MapOperator(func)
+    operator::MapOperator = MapOperator(name, func)
     stream = transform(stream, "map", output_type, operator)
     return stream
 end
 
 # stream绑定op, 处理数据
-function process(stream::DataStream, process_func::ProcessFunction)::SingleOutputStreamOperator <: DataStream
+function process(stream::AbstractStream, name::String, process_func::ProcessFunction, state)::AbstractStream
     output_type = []
-    process_operator::ProcessOperator = ProcessOperator(process_func)  # op上绑定func
+    process_operator::ProcessOperator = ProcessOperator(name, process_func, state)  # op上绑定func
     stream = transform(stream, "process", output_type, process_operator)   # stream上绑定op
     return stream
 end
 
-function filter(stream::DataStream, filter_func::Function)::DataStream
+function filter(stream::DataStream, name::String, filter_func::Function)::DataStream
     outputType = []
-    filter_operator = FilterOperator(filter_func)
+    filter_operator = FilterOperator(name, filter_func)
     transform(stream, "filter", output_type, filter_operator)
 end
 

@@ -1,59 +1,72 @@
 
-abstract type AbstractStreamOperator end    # not <: DataStream
+abstract type StreamOperator end    # not <: DataStream
+abstract type AbstractOneInputStreamOperator <: StreamOperator end
+abstract type AbstractStreamSourceOperator <: StreamOperator end
+abstract type AbstractUdfStreamOperator <: StreamOperator end
 
 
-mutable struct StreamOperator <: AbstractStreamOperator
+# mutable struct StreamOperator <: AbstractStreamOperator
+#     config::String   # StreamConfig
+#     output::StreamRecord
+#     # element::StreamRecord   # runtimeContext
+#     state::Dict{String, Any}
+#     # runtimeContext::StreamingRuntimeContext   # current element
+#     # stateKeySelector1::KeySelector<?, ?>
+#     # stateHandler::StreamOperatorStateHandler
+#     # processingTimeService::ProcessingTimeService
+#     # input1Watermark::Int
+#     # metrics::Array  # OperatorMetricGroup
+# end
+
+mutable struct UdfStreamOperator <: AbstractUdfStreamOperator
+    name::String
+end
+
+mutable struct OneInputStreamOperator <: AbstractOneInputStreamOperator
+    # input::StreamRecord   # input, runtimeContext
+    # output::StreamRecord  
+    name::String
     config::String   # StreamConfig
     output::StreamRecord
-    # element::StreamRecord   # runtimeContext
-    state::Dict{String, Any}
-    # runtimeContext::StreamingRuntimeContext   # current element
-    # stateKeySelector1::KeySelector<?, ?>
-    # stateHandler::StreamOperatorStateHandler
-    # processingTimeService::ProcessingTimeService
-    # input1Watermark::Int
-    # metrics::Array  # OperatorMetricGroup
-end
-
-mutable struct UdfStreamOperator <: AbstractStreamOperator
-end
-
-mutable struct OneInputStreamOperator <: AbstractStreamOperator
-    config::String   # StreamConfig
-    output::StreamRecord  
-    element::StreamRecord   # input, runtimeContext
     state::Dict{String, Any}
 end
 
-mutable struct StreamSourceOperator <: AbstractStreamOperator
+mutable struct StreamSourceOperator <: AbstractStreamSourceOperator
+    name::String
     func::Function    # SourceFunction
-    ctx::Any  # SourceContext
+    data
+    # ctx::Any  # SourceContext
 end
 
-function processElement(op::StreamSourceOperator, element::StreamRecord)::StreamRecord
+function processElement(op::StreamSourceOperator, element::StreamRecord)
     data = op.func(element)
     return data
 end
 
-# function Base.iterate(op::StreamSourceOperator, state = 1)
-#     data = processElement(op, element)   # stream -> df
-#     out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
-#     return out_data
-# end
+function Base.iterate(op::StreamSourceOperator, state = 1)
+    data = processElement(op, element)   # stream -> df
+    out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
+    return out_data
+end
 
 function initializeState(stream_op::StreamOperator, context)
 end
 
 
-mutable struct ProcessOperator <: AbstractStreamOperator
+mutable struct ProcessOperator <: StreamOperator
+    name::String
     process_func::ProcessFunction
+    state::Dict{String, Any}
     # Timestamped_Collector:Array
     # context
     # currentWatermark::Int
 end
+ProcessOperator(name, process_func) = ProcessOperator(name, process_func, Dict())
 
-function processElement(process_op::ProcessOperator, element::StreamRecord)::StreamRecord
-    output = processElement(process_op.process_func, element)
+function processElement(process_op::ProcessOperator, input_element::StreamRecord)::StreamRecord
+    output, state = process_op.process_func.func(input_element.value, process_op.state)
+    process_op.state = state
+    output = StreamRecord(output)
     return output
 end
 
@@ -62,22 +75,25 @@ function processWatermark(process_op::ProcessOperator)
 end
 
 
-mutable struct MapOperator <: AbstractStreamOperator
+mutable struct MapOperator <: StreamOperator
+    name::String
     map_func::Function
 end
 
-function processElement(map_op::MapOperator, element::StreamRecord)::StreamRecord
-    data = map_op.map_func(element)
-    return data
+function processElement(map_op::MapOperator, input_element::StreamRecord)::StreamRecord
+    output = map_op.map_func(input_element.value)
+    output = StreamRecord(output)
+    return output
 end
 
 
-mutable struct FilterOperator <: AbstractStreamOperator
+mutable struct FilterOperator <: StreamOperator
+    name::String
     filter_func
 end
 
-function processElement(filter_op::FilterOperator, element::StreamRecord)
-    data = filter_op.filter_func(element)
+function processElement(filter_op::FilterOperator, input_element::StreamRecord)
+    data = filter_op.filter_func(input_element)
     return data
 end
 

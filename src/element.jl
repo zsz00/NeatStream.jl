@@ -11,6 +11,7 @@ mutable struct StreamRecord <: AbstractElement
     hasTimestamp::Bool
 end
 
+StreamRecord(data) = StreamRecord(data, 0, true)
 
 function isWatermark(record::StreamRecord)::Bool
     

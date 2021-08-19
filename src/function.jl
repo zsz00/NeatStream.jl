@@ -4,12 +4,14 @@ abstract type AbstractRichsFunction end
 mutable struct ProcessFunction <: AbstractRichsFunction
     func::Function
     config::String   # StreamConfig
-    output::StreamRecord
+    # output::StreamRecord
 end
 
-function processElement(process_func::ProcessFunction, element::StreamRecord)::StreamRecord
-    output = process_func.func(element)
-    return output
+ProcessFunction(func) = ProcessFunction(func, "")
+
+function processElement(process_func::ProcessFunction, element::StreamRecord, state)::StreamRecord
+    output, state = process_func.func(element, state)
+    return output, state
 end
 
 mutable struct SourceContext
