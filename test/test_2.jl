@@ -88,7 +88,8 @@ function test_hac()
 end
 
 
-@time test_hac()
+test_1()
+# @time test_hac()
 
 
 
@@ -98,6 +99,9 @@ julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyon
 test_hac()跑通. 2021.8.30
 
 =#
+
+
+
 
 
 

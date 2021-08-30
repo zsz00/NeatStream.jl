@@ -128,10 +128,10 @@ function tt(data)
     return data
 end
 
-function hac(data, state)
+function tt2(data, state)
     data = data + 2
     state["count"] += 1
-    # println("hac: ", data)
+    # println("tt2: ", data)
     return data, state
 end
 
@@ -152,9 +152,9 @@ function test_5_2()
     parse_func = tt
     data_stream = NeatStream.map(data_stream, "tt", parse_func)
     
-    hac_func = ProcessFunction(hac)
+    tt2_func = ProcessFunction(tt2)
     state = Dict("count"=>0)
-    data_stream = process(data_stream, "hac", hac_func, state)
+    data_stream = process(data_stream, "tt2", tt2_func, state)
     # add_sink(data_stream, print)
     # println("data_stream:", data_stream)
 
