@@ -6,7 +6,7 @@
 
 ## About
 
-EasyStream.jl aims to create a simple interface for working with streams, acting as an example in related problems such as the concept drift.
+NeatStream.jl aims to create a simple interface for working with streams, acting as an example in related problems such as the concept drift.
 
 ## Installation
 
@@ -14,13 +14,13 @@ The package can be installed with the Julia package manager.
 From the Julia REPL, type `]` to enter the Pkg REPL mode and run:
 
 ```
-pkg> add EasyStream
+pkg> add NeatStream
 ```
 
 Or, equivalently, via the `Pkg` API:
 
 ```julia
-julia> import Pkg; Pkg.add("EasyStream")
+julia> import Pkg; Pkg.add("NeatStream")
 ```
 
 ## Documentation
@@ -35,14 +35,14 @@ Some important packages:
 - **[SyntheticDatasets.jl](https://github.com/ATISLabs/SyntheticDatasets.jl)**: Packages with stream datasets. 
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://atislabs.github.io/EasyStream.jl/dev/
+[docs-dev-url]: https://atislabs.github.io/NeatStream.jl/dev/
 
-[travis-img]: https://travis-ci.com/ATISLabs/EasyStream.jl.svg?branch=master
-[travis-url]: https://travis-ci.com/ATISLabs/EasyStream.jl
+[travis-img]: https://travis-ci.com/ATISLabs/NeatStream.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/ATISLabs/NeatStream.jl
 
-[codecov-img]: https://codecov.io/gh/ATISLabs/EasyStream.jl/branch/master/graph/badge.svg?token=13TrPsgakO
-[codecov-url]: https://codecov.io/gh/ATISLabs/EasyStream.jl
+[codecov-img]: https://codecov.io/gh/ATISLabs/NeatStream.jl/branch/master/graph/badge.svg?token=13TrPsgakO
+[codecov-url]: https://codecov.io/gh/ATISLabs/NeatStream.jl
 
-[coverage-img]: https://coveralls.io/repos/github/ATISLabs/EasyStream.jl/badge.svg?branch=master
-[coverage-url]: https://coveralls.io/github/ATISLabs/EasyStream.jl?branch=master
+[coverage-img]: https://coveralls.io/repos/github/ATISLabs/NeatStream.jl/badge.svg?branch=master
+[coverage-url]: https://coveralls.io/github/ATISLabs/NeatStream.jl?branch=master
 

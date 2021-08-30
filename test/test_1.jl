@@ -1,19 +1,19 @@
-using EasyStream
+using NeatStream
 using DataFrames, Chain
 using Test
 
 
 function test_1()
     # data = CSV.read(filename; header = false)
-    # conn = EasyStream.TablesConnector(data)
+    # conn = NeatStream.TablesConnector(data)
 
-    df = EasyStream.DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1])
-    conn = EasyStream.TablesConnector(df)
+    df = NeatStream.DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1])
+    conn = NeatStream.TablesConnector(df)
 
     for i = 1:size(df, 1)
-        @test EasyStream.hasnext(conn) == true
+        @test NeatStream.hasnext(conn) == true
         
-        batch = EasyStream.next(conn)
+        batch = NeatStream.next(conn)
         
         for j = 1:size(df, 2)   # 取当前行的所有列数据
             @test  batch[1, j] == df[i, j] 
@@ -21,9 +21,9 @@ function test_1()
         end
     end
 
-    @test EasyStream.hasnext(conn) == false
+    @test NeatStream.hasnext(conn) == false
     @test length(conn) == size(df, 1)
-    EasyStream.reset!(conn)
+    NeatStream.reset!(conn)
     @test conn.state == 0
 end
 
@@ -31,14 +31,14 @@ function test_2()
     # source
     filename = ""
     conn_df = CSV.read(filename; header = false)
-    stream = EasyStream.BatchStream(conn_df; batch_size=2);
+    stream = NeatStream.BatchStream(conn_df; batch_size=2);
 
     # ops
-    filter = EasyStream.FilterOperator([:x, :y])
+    filter = NeatStream.FilterOperator([:x, :y])
     push!(stream, filter)
 
     for i = 1:size(df, 1)
-        stream_filtered = EasyStream.listen(stream)  # stream->df 
+        stream_filtered = NeatStream.listen(stream)  # stream->df 
     end
 end
 
@@ -50,25 +50,25 @@ function test_3()
     # filename = ""
     # data = CSV.read(filename; header = false)
     data_df = DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1], z = [6, 5, 4, 3, 2, 1])
-    conn_df = EasyStream.TablesConnector(data_df, shuffle=false)   # 定义数据源 连接器
-    stream = EasyStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
+    conn_df = NeatStream.TablesConnector(data_df, shuffle=false)   # 定义数据源 连接器
+    stream = NeatStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
 
     # 定义ops
-    filter_op1 = EasyStream.FilterOperator([:x, :y])  # 过滤指定的列
+    filter_op1 = NeatStream.FilterOperator([:x, :y])  # 过滤指定的列
     push!(stream, filter_op1)   # 向stream上加op.  
-    filter_op2 = EasyStream.FilterOperator(:x)
+    filter_op2 = NeatStream.FilterOperator(:x)
     push!(stream, filter_op2)
     # source.map(op_1, init=op_state, returns_state=True).map(op_2)
 
     # 处理
-    stream_filtered = EasyStream.listen(stream)  # run iter. stream->df 
-    stream_filtered = EasyStream.listen(stream) 
+    stream_filtered = NeatStream.listen(stream)  # run iter. stream->df 
+    stream_filtered = NeatStream.listen(stream) 
     println(stream_filtered)
 
-    # sum_op = EasyStream.Sum(100)
+    # sum_op = NeatStream.Sum(100)
     # push!(stream, sum_op)
     reset!(stream)  # 恢复数据源, 清理掉ops, event, state
-    stream_filtered = EasyStream.listen(stream)  # stream->df, 
+    stream_filtered = NeatStream.listen(stream)  # stream->df, 
     println(stream_filtered)
 
 end
@@ -81,12 +81,12 @@ function test_4()
     # filename = ""
     # data = CSV.read(filename; header = false)
     data_df = DataFrame(x = [1, 2, 3, 4, 5, 6], y = [6, 5, 4, 3, 2, 1], z = [6, 5, 4, 3, 2, 1])
-    conn_df = EasyStream.TablesConnector(data_df, shuffle=false)   # 定义数据源 连接器
-    stream = EasyStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
+    conn_df = NeatStream.TablesConnector(data_df, shuffle=false)   # 定义数据源 连接器
+    stream = NeatStream.BatchStream(conn_df; batch_size=2) # 定义数据流.  包含个iterator
     
-    filter_op1 = EasyStream.FilterOperator([:x, :y])  # 过滤指定的列
+    filter_op1 = NeatStream.FilterOperator([:x, :y])  # 过滤指定的列
     push!(stream, filter_op1)   # 向stream上加op.  
-    filter_op2 = EasyStream.FilterOperator(:x)
+    filter_op2 = NeatStream.FilterOperator(:x)
     push!(stream, filter_op2)
 
     cluster_pipeline = @chain stream begin
@@ -137,10 +137,10 @@ end
 
 function test_5_2()
     # demo
-    args_default = Dict("stream_time_type" =>1, "defaultLocalParallelism"=>1)
+    args_default = Dict("stream_time_type" =>"", "defaultLocalParallelism"=>1)
     env = Environment("test_job", args_default)
 
-    data = [1,2,3,4,5,6,7,8,9,10]
+    data = 1:1000  # [1,2,3,4,5,6,7,8,9,10]
     data_stream = from_elements(env, data)
 
     # op = ""
@@ -150,7 +150,7 @@ function test_5_2()
 
     # println("data_stream_2:", data_stream_2)
     parse_func = tt
-    data_stream = EasyStream.map(data_stream, "tt", parse_func)
+    data_stream = NeatStream.map(data_stream, "tt", parse_func)
     
     hac_func = ProcessFunction(hac)
     state = Dict("count"=>0)
@@ -169,11 +169,11 @@ test_5_2()
 
 
 #=
-julia>cd("/home/zhangyong/codes/EasyStream.jl")
+julia>cd("/home/zhangyong/codes/NeatStream.jl")
 pkg>activate .
-julia>using EasyStream
+julia>using NeatStream
 
-julia --project=/home/zhangyong/codes/EasyStream.jl/Project.toml "/home/zhangyong/codes/EasyStream.jl/test/test_1.jl"
+julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyong/codes/NeatStream.jl/test/test_1.jl"
 
 
 =#

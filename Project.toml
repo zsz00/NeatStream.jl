@@ -1,4 +1,4 @@
-name = "EasyStream"
+name = "NeatStream"
 uuid = "ebb30991-6a3b-4324-962c-6bc29053301c"
 authors = ["Filipe Braida", "Leandro Alvim", "Pedro Conrado"]
 version = "0.1.0"

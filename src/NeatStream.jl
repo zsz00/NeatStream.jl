@@ -1,4 +1,4 @@
-module EasyStream
+module NeatStream
 
 using CSV
 using DataFrames
@@ -22,7 +22,9 @@ include("connector.jl")
 
 
 
-export Environment, from_elements, execute, Transformation, DataStream, map, processElement, process, ProcessFunction
+export Environment, from_elements, execute, Transformation, DataStream, 
+map, processElement, process, ProcessFunction,
+readTextFile
 
 end # module
 

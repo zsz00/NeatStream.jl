@@ -14,8 +14,7 @@ java 过度封装
 
 
 
-clint --> server 
-julia/python --> flink server ?? 不行
+
 
 
 

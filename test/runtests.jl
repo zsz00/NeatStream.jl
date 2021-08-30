@@ -1,4 +1,4 @@
-using EasyStream
+using NeatStream
 using DataFrames
 using Test
 

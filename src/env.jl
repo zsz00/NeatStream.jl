@@ -48,13 +48,14 @@ end
 
 # ????? 卡着了
 function readTextFile(env::Environment, path::String)::DataStreamSource
-    charset_name = "utf-8"
-    f = open(path)   # 怎么把这个变成 op->stream 
-    func 
+    # data = CSV.Rows(path)   # csv rows
+    data = eachline(open(path))
     source_name = "readTextFile"
-    outTypeInfo = ""
+    op_name = "println"
+    func = println
+    outTypeInfo = Core.String
 
-    data_stream_source = add_source(env, outTypeInfo, func, source_name)
+    data_stream_source = add_source(env, outTypeInfo, func, source_name, op_name, data)
 
     return data_stream_source
 end
@@ -85,30 +86,27 @@ end
 
 function execute(env::Environment, job_name::String)
     # data = env.args["data"]
+    println("开始执行job:", job_name)
     println(env.transformations[1])
     stream_source_tf = env.transformations[1]
     all_data = stream_source_tf.operator.data
     # while true # hasnext(stream_source_tf.operator)   # 每个iter
         # data = next(stream_source.operator)
     for data in all_data   # data_loader
-        println("input: ", data)
+        # println("input: ", data)
         for tf in env.transformations[2:end]   # map, process, 每个op.  
             # data = tf(op(process_element(data)))  # 逻辑的
             operator = tf.operator
-            if isa(data, Int)
-                data = StreamRecord(data)
-            end
+            data = isa(data, StreamRecord) ? data : StreamRecord(data)
             
             data = processElement(operator, data)
 
-            if isa(operator, ProcessOperator)
-                op_state = operator.state["count"]
-            else
-                op_state = 0
-            end
-            println(tf.name, ",", tf.operator.name, ", op_out:", data.value, ", op_state:", op_state)
+            op_state = isa(operator, ProcessOperator) ? operator.state : op_state = Dict()
+            op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
+            op_state_2 = operator.name == "hac" ? length(op_state["hac"].nodes) : 0
+            println(tf.name, ",", tf.operator.name, ", op_out:", op_state_2, ", op_state:", op_state_1)
         end
-        println("out: ", data.value)
+        # println("out: ", data)
     end
     # return data
 end

@@ -25,17 +25,15 @@ TODO
 参考 Transducers.jl, OnlineStats.jl, DataTools.jl, chain.jl, streamz, flink 因为要兼容. 
 
 应该是 每个op 有自定义的state. stream上也可以有内置的state 
-
-stream
-
 op(stat,data) -> stat,data
 数据和状态都要 在ops 之间传输 
 
-ops之间可以用queue吗? 不行.
+ops之间可以用queue吗? 可以
 
 
 1. 设计 api, 参考的flink 
-2. 实现流处理
+2. 实现流处理, 参考的streamz
+3. 执行优化,并行. 难点
 
 env -> datastream -> op -> func -> output
 
@@ -44,8 +42,8 @@ env -> datastream -> op -> func -> output
 
 数据怎么 流进去的, 什么逐个op执行的 ??
 
-怎么走通数据流
 
-
+clint --> server 
+julia/python --> flink server ?? 不行
 
 
