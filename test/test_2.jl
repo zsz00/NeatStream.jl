@@ -70,15 +70,15 @@ function test_hac()
     args_default = Dict("stream_time_type"=>1, "defaultStateBackend"=>"")
     env = Environment("test_hac", args_default)
 
-    path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"
-    data_stream_source = readTextFile(env, path)
+    path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"  # 6.4w
+    data_stream_source = readTextFile(env, path)  # source
 
     parse_func = prase_json
     data_stream = NeatStream.map(data_stream_source, "parse_json", parse_func)
     
     hac_func = ProcessFunction(hac_1)
     state = Dict("hac"=>HAC(0.5; batch_size=1000), "count"=>0)
-    # data_stream = process(data_stream, "hac", hac_func, state)
+    data_stream = process(data_stream, "hac", hac_func, state)
 
     # add_sink(data_stream, print)
 
@@ -97,6 +97,8 @@ end
 julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyong/codes/NeatStream.jl/test/test_2.jl"
 
 test_hac()跑通. 2021.8.30
+
+35.395244 seconds (58.10 M allocations: 6.850 GiB, 3.61% gc time, 18.90% compilation time)
 
 =#
 

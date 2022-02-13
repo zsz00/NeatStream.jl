@@ -398,35 +398,36 @@ function matix2Vectors(b)
     return c
 end
 
-# function eval_1(file_name)
-#     # pushfirst!(PyVector(pyimport("sys")."path"), "")
-#     # pushfirst!(PyVector(pyimport("sys")."path"), "../..")
+#=
+function eval_1(file_name)
+    # pushfirst!(PyVector(pyimport("sys")."path"), "")
+    # pushfirst!(PyVector(pyimport("sys")."path"), "../..")
 
-#     py"""
-#     import os, sys
-#     import numpy as np
-#     import pandas as pd
-#     sys.path.insert(0, "")
-#     sys.path.insert(0, "cluster")
-#     from utils import eval_cluster
+    py"""
+    import os, sys
+    import numpy as np
+    import pandas as pd
+    sys.path.insert(0, "")
+    sys.path.insert(0, "cluster")
+    from utils import eval_cluster
 
 
-#     dir_1 = "/mnt/zy_data/data/pk/pk_13/output_1"
-#     cluster_path = os.path.join(dir_1, "out_1", $file_name)
-#     labels_pred_df = pd.read_csv(cluster_path, names=["obj_id", "person_id"])
+    dir_1 = "/mnt/zy_data/data/pk/pk_13/output_1"
+    cluster_path = os.path.join(dir_1, "out_1", $file_name)
+    labels_pred_df = pd.read_csv(cluster_path, names=["obj_id", "person_id"])
 
-#     gt_path = os.path.join(dir_1, "merged_all_out_1_1_1_21-small_1.pkl")  # 21  9
-#     gt_sorted_df = pd.read_pickle(gt_path)
+    gt_path = os.path.join(dir_1, "merged_all_out_1_1_1_21-small_1.pkl")  # 21  9
+    gt_sorted_df = pd.read_pickle(gt_path)
 
-#     labels_true, labels_pred, _ = eval_cluster.align_gt(gt_sorted_df, labels_pred_df)
-#     metric, info = eval_cluster.eval(labels_true, labels_pred, is_show=True)
-#     metric["img_count"] = len(labels_pred) * 1.0
-#     metric["cluster_count"] = len(set(labels_pred)) * 1.0
-#     metric["drop"] = (len(labels_pred_df) - len(labels_true)) / len(labels_pred_df)
-#     print(f'drop:{metric["drop"]:.4f}')
+    labels_true, labels_pred, _ = eval_cluster.align_gt(gt_sorted_df, labels_pred_df)
+    metric, info = eval_cluster.eval(labels_true, labels_pred, is_show=True)
+    metric["img_count"] = len(labels_pred) * 1.0
+    metric["cluster_count"] = len(set(labels_pred)) * 1.0
+    metric["drop"] = (len(labels_pred_df) - len(labels_true)) / len(labels_pred_df)
+    print(f'drop:{metric["drop"]:.4f}')
 
-#     """
-# end
-
+    """
+end
+=#
 
 

@@ -81,11 +81,8 @@ function prcoess_ss(results, topk)
     dists = zeros(Float32, (size, topk))
     idxs = zeros(Int32, (size, topk))
     for (i, p) in enumerate(results)
-        for (j, pp) in enumerate(p)
-            # println(f"\(i), \(j), \(pp[1]), \(pp[2])")
-            idxs[i, j] = pp[1]
-            dists[i, j] = pp[2]
-        end
+        idxs[i, :] = p.res.id
+        dists[i, :] = p.res.dist
     end
     dists = 1.0 .- dists
     return dists, idxs

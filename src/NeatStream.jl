@@ -16,10 +16,7 @@ include("others.jl")
 include("datasets.jl")
 include("drifts.jl")
 
-
 include("connector.jl")
-
-
 
 
 export Environment, from_elements, execute, Transformation, DataStream, 
