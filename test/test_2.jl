@@ -98,7 +98,7 @@ julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyon
 
 test_hac()跑通. 2021.8.30
 
-35.395244 seconds (58.10 M allocations: 6.850 GiB, 3.61% gc time, 18.90% compilation time)
+2121 seconds=35min (321.40 M allocations: 32.704 GiB, 0.38% gc time, 0.67% compilation time)
 
 =#
 
