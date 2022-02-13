@@ -78,7 +78,7 @@ function test_hac()
     
     hac_func = ProcessFunction(hac_1)
     state = Dict("hac"=>HAC(0.5; batch_size=1000), "count"=>0)
-    data_stream = process(data_stream, "hac", hac_func, state)
+    # data_stream = process(data_stream, "hac", hac_func, state)
 
     # add_sink(data_stream, print)
 
@@ -88,8 +88,8 @@ function test_hac()
 end
 
 
-test_1()
-# @time test_hac()
+# test_1()
+@time test_hac()
 
 
 

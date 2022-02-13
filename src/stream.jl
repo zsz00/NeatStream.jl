@@ -228,13 +228,11 @@ function getTransformation(stream::DataStream)
     return stream.transformation
 end
 
-#=
-flink.DataStream.class 
 
-=#
 
 #=
 2021.8.13 
+参考:
 \streamz\core.py
 \org\apache\flink\streaming\api\datastream\DataStream.class
 
@@ -262,6 +260,4 @@ stream上的 方法和op不同, 这些方法可以处理op.
 
 ops 之间用 queue
 op 中用并行
-
 =#
-

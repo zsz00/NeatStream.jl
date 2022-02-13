@@ -81,7 +81,27 @@ function from_source(env::Environment, f::Function)::DataStreamSource
 end
 
 function execute(env::Environment, stream_graph::StreamGraph)
-    execute(streamGraph, env.configuration)
+    # dagger.jl 
+    println("开始执行job:", job_name)
+    println(env.transformations[1])
+    stream_source_tf = env.transformations[1]
+    all_data = stream_source_tf.operator.data
+    for data in all_data   # data_loader
+        # println("input: ", data)
+        for tf in env.transformations[2:end]   # map, process, 每个op.  
+            # data = tf(op(process_element(data)))  # 逻辑的
+            operator = tf.operator
+            data = isa(data, StreamRecord) ? data : StreamRecord(data)
+            
+            data = processElement(operator, data)
+
+            op_state = isa(operator, ProcessOperator) ? operator.state : op_state = Dict()
+            op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
+            op_state_2 = operator.name == "hac" ? length(op_state["hac"].nodes) : 0
+            println(tf.name, ",", tf.operator.name, ", op_out:", op_state_2, ", op_state:", op_state_1)
+        end
+    end
+
 end
 
 function execute(env::Environment, job_name::String)

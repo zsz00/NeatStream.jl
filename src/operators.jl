@@ -82,6 +82,7 @@ end
 
 function processElement(map_op::MapOperator, input_element::StreamRecord)::StreamRecord
     output = map_op.map_func(input_element.value)
+    # data = delayed(map_op.map_func)(input_element.value)
     output = StreamRecord(output)
     return output
 end

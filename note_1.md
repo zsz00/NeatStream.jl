@@ -9,8 +9,8 @@
 
 
 java 过度封装
-怎么include() 
-各种类型 继承关系一团糟
+julia怎么include() 
+julia各种类型 继承关系一团糟
 
 
 
