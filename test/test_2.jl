@@ -1,3 +1,4 @@
+
 using NeatStream
 using DataFrames, Chain
 include("util_1.jl")
@@ -70,15 +71,21 @@ function test_hac()
     args_default = Dict("stream_time_type"=>1, "defaultStateBackend"=>"")
     env = Environment("test_hac", args_default)
 
+    # source
     path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"  # 6.4w
-    data_stream_source = readTextFile(env, path)  # source
+    data_stream_source = NeatStream.readTextFile(env, path)
 
+    # op1
     parse_func = prase_json
     data_stream = NeatStream.map(data_stream_source, "parse_json", parse_func)
-    
+    # op2
     hac_func = ProcessFunction(hac_1)
     state = Dict("hac"=>HAC(0.5; batch_size=1000), "count"=>0)
-    data_stream = process(data_stream, "hac", hac_func, state)
+    data_stream = NeatStream.process(data_stream, "hac", hac_func, state)
+
+    # parse_func = println
+    # data_stream = NeatStream.map(data_stream, "print", parse_func)
+    NeatStream.print_out(data_stream, type="state")
 
     # add_sink(data_stream, print)
 

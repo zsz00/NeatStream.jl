@@ -32,7 +32,7 @@ mutable struct OneInputStreamOperator <: AbstractOneInputStreamOperator
 end
 
 mutable struct StreamSourceOperator <: AbstractStreamSourceOperator
-    name::String
+    name::String   # op name
     func::Function    # SourceFunction
     data
     # ctx::Any  # SourceContext
@@ -48,6 +48,19 @@ function Base.iterate(op::StreamSourceOperator, state = 1)
     out_data = isempty(data) ? nothing : (data, state+1)  # (df, stat3)
     return out_data
 end
+
+mutable struct StreamSinkOperator <: AbstractStreamSourceOperator
+    name::String   # op name
+    func::Function    # SourceFunction
+    data
+    # ctx::Any  # SourceContext
+end
+
+function processElement(op::StreamSinkOperator, element::StreamRecord)
+    data = op.func(element)
+    return data
+end
+
 
 function initializeState(stream_op::StreamOperator, context)
 end
@@ -70,8 +83,7 @@ function processElement(process_op::ProcessOperator, input_element::StreamRecord
     return output
 end
 
-function processWatermark(process_op::ProcessOperator)
-    
+function processWatermark(process_op::ProcessOperator)  
 end
 
 
@@ -87,6 +99,20 @@ function processElement(map_op::MapOperator, input_element::StreamRecord)::Strea
     return output
 end
 
+mutable struct PrintOperator <: StreamOperator
+    type::String
+    tfs::Array
+end
+
+function processElement(print_op::PrintOperator, input_element::StreamRecord)::StreamRecord
+    if print_op.type == "data"
+        output = println(input_element.value)
+    else
+        output = println(print_op[1].name)
+    end
+    output = StreamRecord(output)
+    return output
+end
 
 mutable struct FilterOperator <: StreamOperator
     name::String

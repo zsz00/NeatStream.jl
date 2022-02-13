@@ -68,7 +68,7 @@ function hac_1(data, state)
         keynodes_feats = []
         keynodes_ids = []
         del_keynodes_ids = []
-        println(f"======:\(num), \(size(vectors))")
+        # println(f"======:\(num), \(size(vectors))")
 
         # query 
         gallery = vectors  # vcat((hcat(i...) for i in vectors)...)  # Vectors -> Matrix

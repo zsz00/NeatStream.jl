@@ -30,6 +30,7 @@ function transform(stream::AbstractStream, operator_name::String, output_type, o
     add_operator(stream.environment, transform)   # 注册op到env
     return stream
 end
+
 function transform(stream::DataStreamSource, operator_name::String, output_type, operator::StreamSourceOperator)::DataStreamSource
 
     args_default = Dict("bufferTimeout"=>1, "slotSharingGroup"=>1, "uid"=>"")
@@ -174,18 +175,16 @@ end
 
 # 数据库中的join操作
 function join(stream::DataStream, other_stream::DataStream)::JoinedStream 
-    
 end
 
 # combine
 function union(stream::DataStream, other_stream::DataStream)::DataStream
-    
 end
 
 function split(stream::DataStream)::SplitStream
-    
 end
 
+# map, have not stat
 function map(stream::AbstractStream, name::String, func::Function)::AbstractStream
     output_type = Int
     operator::MapOperator = MapOperator(name, func)
@@ -193,7 +192,7 @@ function map(stream::AbstractStream, name::String, func::Function)::AbstractStre
     return stream
 end
 
-# stream绑定op, 处理数据
+# process, have stat
 function process(stream::AbstractStream, name::String, process_func::ProcessFunction, state)::AbstractStream
     output_type = []
     process_operator::ProcessOperator = ProcessOperator(name, process_func, state)  # op上绑定func
@@ -201,6 +200,7 @@ function process(stream::AbstractStream, name::String, process_func::ProcessFunc
     return stream
 end
 
+# filter
 function filter(stream::DataStream, name::String, filter_func::Function)::DataStream
     outputType = []
     filter_operator = FilterOperator(name, filter_func)
@@ -209,20 +209,38 @@ end
 
 # flink 废弃了, 可以把Transducer的加进来
 function fold(stream::DataStream)::DataStream
-    
 end
 
 function connect(env::Environment, stream::DataStream)::ConnectedStream   
 end
 
-function print(stream::DataStream)::DataStream
-    print_stream = map(stream, print)
-    return print_stream
+function print_out1(stream::Union{DataStream, DataStreamSource}; type::String="state")
+    # print op.state, print op.data
+    # op_name = ""
+    # op_state.key = ""
+    tf = stream.transformation
+    println(tf.name)
+    operator = tf.operator
+    if isa(operator, ProcessOperator)
+        op_state = operator.state
+        op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
+        println(op_state_1)
+    end
+
+    # print_stream = map(stream, "print", println)
+    # return print_stream
 end
 
-function add_sink(stream::DataStream, f::Function)::DataStreamSink
+function print_out(stream::AbstractStream, type::String="state")::AbstractStream
+    output_type = Int
+    # tfs = stream.environment.transformations
+    tf = stream.transformation
     
+    operator::PrintOperator = PrintOperator(type, [tf])
+    stream = transform(stream, "print", output_type, operator)
+    return stream
 end
+
 
 function getTransformation(stream::DataStream)
     return stream.transformation

@@ -51,8 +51,8 @@ function readTextFile(env::Environment, path::String)::DataStreamSource
     # data = CSV.Rows(path)   # csv rows
     data = eachline(open(path))
     source_name = "readTextFile"
-    op_name = "println"
-    func = println
+    op_name = "eachline"
+    func = eachline
     outTypeInfo = Core.String
 
     data_stream_source = add_source(env, outTypeInfo, func, source_name, op_name, data)
@@ -78,6 +78,9 @@ function add_source(env::Environment, outTypeInfo, func, source_name, op_name, d
 end
 
 function from_source(env::Environment, f::Function)::DataStreamSource
+end
+
+function add_sink(env::Environment, sink::StreamSinkOperator)::DataStreamSink
 end
 
 function execute(env::Environment, stream_graph::StreamGraph)
@@ -109,23 +112,27 @@ function execute(env::Environment, job_name::String)
     println("开始执行job:", job_name)
     println(env.transformations[1])
     stream_source_tf = env.transformations[1]
-    all_data = stream_source_tf.operator.data
+    all_data = stream_source_tf.operator.data   # stream_source,数据源
     # while true # hasnext(stream_source_tf.operator)   # 每个iter
         # data = next(stream_source.operator)
-    for data in all_data   # data_loader
+    p = Progress(100000, 1, "Computing pass:")
+    for data in all_data   # data_loader. each data
         # println("input: ", data)
-        for tf in env.transformations[2:end]   # map, process, 每个op.  
+        for tf in env.transformations[2:end]   # map,process. each op.  
             # data = tf(op(process_element(data)))  # 逻辑的
             operator = tf.operator
             data = isa(data, StreamRecord) ? data : StreamRecord(data)
             
-            data = processElement(operator, data)
-
+            data = processElement(operator, data)   # out = op(data)
+            
+            # get operator.state
             op_state = isa(operator, ProcessOperator) ? operator.state : op_state = Dict()
             op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
             op_state_2 = operator.name == "hac" ? length(op_state["hac"].nodes) : 0
-            println(tf.name, ",", tf.operator.name, ", op_out:", op_state_2, ", op_state:", op_state_1)
+            # println(tf.name, ",", tf.operator.name, ", op_out.nodes:", op_state_2, 
+            #         ", op_state.clusters:", op_state_1)
         end
+        next!(p)
         # println("out: ", data)
     end
     # return data
@@ -150,7 +157,6 @@ function getStreamGraphGenerator(env::Environment)::StreamGraphGenerator
         return stream_sraph_generator
     end 
 end
-
 
 function getExecutionPlan(env::Environment)
     return this.getStreamGraph("Flink Streaming Job", false).getStreamingPlanAsJSON();
