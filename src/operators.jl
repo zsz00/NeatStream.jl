@@ -100,17 +100,24 @@ function processElement(map_op::MapOperator, input_element::StreamRecord)::Strea
 end
 
 mutable struct PrintOperator <: StreamOperator
+    name::String
     type::String
     tfs::Array
 end
 
 function processElement(print_op::PrintOperator, input_element::StreamRecord)::StreamRecord
     if print_op.type == "data"
-        output = println(input_element.value)
+        println(input_element.value)
     else
-        output = println(print_op[1].name)
+        # get operator.state
+        tf = print_op.tfs[1]
+        operator = tf.operator
+        op_state = tf.operator.state
+        op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
+        op_state_2 = operator.name == "hac" ? length(op_state["hac"].nodes) : 0
+        println("\(tf.name), \(tf.operator.name), op_state.nodes:\(op_state_2), op_state.clusters:\(op_state_1)")
     end
-    output = StreamRecord(output)
+    output = input_element
     return output
 end
 

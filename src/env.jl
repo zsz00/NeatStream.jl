@@ -125,12 +125,6 @@ function execute(env::Environment, job_name::String)
             
             data = processElement(operator, data)   # out = op(data)
             
-            # get operator.state
-            op_state = isa(operator, ProcessOperator) ? operator.state : op_state = Dict()
-            op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
-            op_state_2 = operator.name == "hac" ? length(op_state["hac"].nodes) : 0
-            # println(tf.name, ",", tf.operator.name, ", op_out.nodes:", op_state_2, 
-            #         ", op_state.clusters:", op_state_1)
         end
         next!(p)
         # println("out: ", data)

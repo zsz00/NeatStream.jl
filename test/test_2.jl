@@ -1,4 +1,4 @@
-
+using Revise
 using NeatStream
 using DataFrames, Chain
 include("util_1.jl")
@@ -49,8 +49,8 @@ mutable struct HAC
 end
 
 # 构造函数,初始化
-function HAC(th; batch_size::Int=1)
-    top_k = 100  # rank top k
+function HAC(th; batch_size::Int=1, top_k::Int=100)
+    top_k = top_k  # rank top k
     th = th   # 聚类阈值
     batch_size = batch_size
     num = 0
@@ -79,19 +79,15 @@ function test_hac()
     parse_func = prase_json
     data_stream = NeatStream.map(data_stream_source, "parse_json", parse_func)
     # op2
-    hac_func = ProcessFunction(hac_1)
+    hac_func = ProcessFunction(hac_1)  # hac_1慢
     state = Dict("hac"=>HAC(0.5; batch_size=1000), "count"=>0)
     data_stream = NeatStream.process(data_stream, "hac", hac_func, state)
 
-    # parse_func = println
-    # data_stream = NeatStream.map(data_stream, "print", parse_func)
-    NeatStream.print_out(data_stream, type="state")
+    data_stream = NeatStream.print_out(data_stream; out_type="state")
 
     # add_sink(data_stream, print)
 
     execute(env, "test_job")
-    
-
 end
 
 
@@ -108,12 +104,4 @@ test_hac()跑通. 2021.8.30
 2121 seconds=35min (321.40 M allocations: 32.704 GiB, 0.38% gc time, 0.67% compilation time)
 
 =#
-
-
-
-
-
-
-
-
 

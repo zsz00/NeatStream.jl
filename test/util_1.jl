@@ -85,7 +85,7 @@ function hac_1(data, state)
 
         # rank_result = search_obj(collection_name, feats_2, top_k)  # search rank in milvus/fse 
         # dists_2, idxs_2 = prcoess_results_3(rank_result, top_k)
-        if num == batch_size
+        if num == batch_size   # 第一个batch
             dists_2 = zeros(Float32, (0, top_k))
             idxs_2 = zeros(Int32, (0, top_k))
         else

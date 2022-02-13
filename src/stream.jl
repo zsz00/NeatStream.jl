@@ -214,29 +214,12 @@ end
 function connect(env::Environment, stream::DataStream)::ConnectedStream   
 end
 
-function print_out1(stream::Union{DataStream, DataStreamSource}; type::String="state")
-    # print op.state, print op.data
-    # op_name = ""
-    # op_state.key = ""
-    tf = stream.transformation
-    println(tf.name)
-    operator = tf.operator
-    if isa(operator, ProcessOperator)
-        op_state = operator.state
-        op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
-        println(op_state_1)
-    end
-
-    # print_stream = map(stream, "print", println)
-    # return print_stream
-end
-
-function print_out(stream::AbstractStream, type::String="state")::AbstractStream
+function print_out(stream::AbstractStream; out_type::String="state")::AbstractStream
     output_type = Int
     # tfs = stream.environment.transformations
     tf = stream.transformation
     
-    operator::PrintOperator = PrintOperator(type, [tf])
+    operator::PrintOperator = PrintOperator("print", out_type, [tf])
     stream = transform(stream, "print", output_type, operator)
     return stream
 end

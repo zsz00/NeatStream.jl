@@ -1,5 +1,5 @@
 module NeatStream
-
+using Revise
 using CSV, DataFrames
 using ProgressMeter, Strs
 
