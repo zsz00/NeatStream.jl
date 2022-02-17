@@ -115,7 +115,8 @@ function execute(env::Environment, job_name::String)
     all_data = stream_source_tf.operator.data   # stream_source,数据源
     # while true # hasnext(stream_source_tf.operator)   # 每个iter
         # data = next(stream_source.operator)
-    p = Progress(100000, 1, "Computing pass:")
+    # prog = Progress(100000, 1, "Computing pass:")
+    prog = ProgressUnknown("Titles read:")
     for data in all_data   # data_loader. each data
         # println("input: ", data)
         for tf in env.transformations[2:end]   # map,process. each op.  
@@ -126,7 +127,7 @@ function execute(env::Environment, job_name::String)
             data = processElement(operator, data)   # out = op(data)
             
         end
-        next!(p)
+        next!(prog)
         # println("out: ", data)
     end
     # return data

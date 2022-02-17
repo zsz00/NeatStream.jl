@@ -5,6 +5,7 @@
 using Strs, JSON3, Base64
 # using NearestNeighbors, Distances
 # using LinearAlgebra, Statistics
+# using Faiss
 
 
 mutable struct Node <: Any
@@ -81,7 +82,8 @@ function hac_1(data, state)
         # search top_k 
         # dists_1, idxs_1 = rank_2(feats_1, top_k, num-batch_size)    # 在本批查询, NN.jl
         # dists_1, idxs_1 = rank_3(gallery, query, ids, top_k)        # 在本批查询, NN.jl
-        dists_1, idxs_1 = rank_4(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, SS.jl
+        # dists_1, idxs_1 = rank_4(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, SS.jl
+        dists_1, idxs_1 = rank_5(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, Faiss.jl
 
         # rank_result = search_obj(collection_name, feats_2, top_k)  # search rank in milvus/fse 
         # dists_2, idxs_2 = prcoess_results_3(rank_result, top_k)
@@ -187,6 +189,167 @@ function hac_1(data, state)
     return data, state
 end
 
+function hac_2(data, state)
+    hac_state = state["hac"]
+    top_k = hac_state.top_k
+    th = hac_state.th
+    batch_size = hac_state.batch_size
+    num = hac_state.num
+    nodes = hac_state.nodes
+    clusters = hac_state.clusters
+    collection_name = hac_state.collection_name
+    vectors = hac_state.vectors
+    ids = hac_state.ids
+    size_keynotes = hac_state.size_keynotes
+
+    num += 1
+    node_st1 = data   # # 无同镜
+    # println(f"node:\(node_st1)")
+    node = node_st1
+    feat_1 = node.feature   # 特征
+    n_id = node.n_id
+    c_id = node.c_id
+    # cluster = clusters_st1[c_id]   # 同镜
+    cluster = Cluster(c_id, 1, 1, [n_id], 0, 0)    # 无同镜
+
+    # init. 存了所有点
+    nodes[n_id] = node 
+    clusters[c_id] = cluster
+
+    push!(vectors, feat_1)   # 把一批的feat存到状态里. 为batch加的
+    push!(ids, n_id)
+
+    # batch/window. 批处理, 矩阵操作. 是不是可以加个window op.
+    if num % batch_size == 0
+        keynodes_feats = []
+        keynodes_ids = []
+        del_keynodes_ids = []
+        # println(f"======:\(num), \(size(vectors))")
+
+        # query 
+        gallery = vectors  # vcat((hcat(i...) for i in vectors)...)  # Vectors -> Matrix
+        query = gallery
+        # ids = vcat((hcat(i...) for i in ids)...)
+        # feats_1 = knn_feat(collection_name, gallery, query, num-batch_size)  # knn
+        # feats_2 = matix2Vectors(feats_1)   # knn feats
+        feats_2 = vectors  # 不用knn
+        
+        # search top_k 
+        # dists_1, idxs_1 = rank_2(feats_1, top_k, num-batch_size)    # 在本批查询, NN.jl
+        # dists_1, idxs_1 = rank_3(gallery, query, ids, top_k)        # 在本批查询, NN.jl
+        # dists_1, idxs_1 = rank_4(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, SS.jl
+        dists_1, idxs_1 = rank_5(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, Faiss.jl
+
+        # rank_result = search_obj(collection_name, feats_2, top_k)  # search rank in milvus/fse 
+        # dists_2, idxs_2 = prcoess_results_3(rank_result, top_k)
+        if num == batch_size   # 第一个batch
+            dists_2 = zeros(Float32, (0, top_k))
+            idxs_2 = zeros(Int64, (0, top_k))
+        else
+            # dists_2, idxs_2 = search_obj_batch(collection_name, feats_2, top_k)
+            feats_2_matrix = vcat((hcat(i...) for i in feats_2)...)
+            dists_2, idxs_2 = search(collection_name, feats_2_matrix, top_k)
+        end
+        # println(f"\(size(dists_1)), \(size(dists_2))")
+        dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)
+        idxs = size(idxs_2)[1] == 0 ? idxs_1 : hcat(idxs_1, idxs_2)
+        # println(f"===:\(num), \(size(dists)), \(size(idxs))")
+
+        batch = num ÷ batch_size - 1
+        for i in 1:batch_size
+            idx_1 = findall(dists[i,:] .> th)   # 返回的idx
+            dists_y = dists[i,:][idx_1]  # cos 
+            idx_y = idxs[i,:][idx_1]   # index.  Tuple.(idx_1)
+            num_1 = batch*batch_size+i
+            n_id_1 = ids[num_1]   # 获取真obj_id
+            node_1 = nodes[n_id_1]
+            c_id_1 = node_1.c_id  # 会传递到nodes吗? 会. 并且 未来的也会被下面的union_2 改变c_id
+
+            quality_1 = -40<node_1.yaw<40  && -30<node_1.pitch<30 && node_1.mask<2
+            # 质量差的丢掉, 放到废片簇"0"里  
+            if quality_1 == false || node_1.blur < 0.1  # 0.1
+                if n_id_1 in keys(clusters)  # 注意:此处不能用c_id_1 
+                    append!(clusters["0"].c_members, pop!(clusters, n_id_1).c_members)  # 按道理只一个member
+                    nodes[n_id_1].c_id = "0"   # 只一个member的c_id. 完全的应该是改全部的members
+                    continue
+                end
+            end
+
+            # println(f"batch:\(batch),i:\(i), keynodes_feats:\(size(keynodes_feats)), del_keynodes_ids:\(size(del_keynodes_ids)), \(size_keynotes)")
+
+            for j in 1: length(idx_y)  # 遍历每个连接
+                id_1 = nodes[n_id_1].c_id 
+                idx_j = idx_y[j]
+                n_id_2 = ids[idx_j]   # 也有低质量的, 需要控制下
+                node_2 = nodes[n_id_2]
+                id_2 = node_2.c_id
+                cos_1 = dists_y[j]  # 相似度
+                if !(id_1 in keys(clusters))
+                    println(f"id_1: batch:\(batch),i:\(i),j:\(j), id_1:\(id_1), \(node_1.blur), \(node_1.n_id)")
+                    continue
+                end
+                if !(id_2 in keys(clusters))
+                    println(f"id_2: batch:\(batch),i:\(i),j:\(j), id_2:\(id_2), \(node_2.blur), \(size(ids)), \(length(clusters))")
+                    continue
+                end
+
+                if id_1 != "0" && id_2 != "0"
+                    union_2!(id_1, id_2, nodes, clusters)
+                end
+            end
+
+            # 代表点选择
+            node_1 = nodes[n_id_1]
+            quality_2_1 = quality_1 && node_1.blur >= 0.1
+            cos_1 = length(dists_y) > 1 ? dists_y[2] : 0.0
+            
+            cluster_1 = clusters[node_1.c_id]
+            if quality_2_1
+                if cos_1 <= 1 && cluster_1.c_key_size < 10   # add  0.95
+                    push!(keynodes_feats, feats_2[i])   # 代表点 feats_2[i]
+                    push!(keynodes_ids, num_1)   # 代表点  node_1.n_id
+                    cluster_1.c_key_size += 1
+                elseif cos_1 >= 0.55 && cluster_1.c_key_size >= 10
+                    node_2 = nodes[ids[idx_y[2]]]
+                    if node_1.blur>node_2.blur  # update
+                        push!(keynodes_feats, feats_2[i])   # 代表点
+                        push!(keynodes_ids, num_1)    # 代表点
+                        push!(del_keynodes_ids, idx_y[2])   # 要被删除的id. 
+                    end
+                end
+            end
+        end
+
+        if length(keynodes_ids) > 0
+            # println(f"\(collection_name), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
+            # insert_obj(collection_name, keynodes_feats, keynodes_ids)   # add  慢
+            keynodes_feats_matrix = vcat((hcat(i...) for i in keynodes_feats)...)
+            keynodes_ids_matrix = Array{Int64}(keynodes_ids)
+            add_with_ids(collection_name, keynodes_feats_matrix, keynodes_ids_matrix)
+            size_keynotes += length(keynodes_feats)
+        end
+        # if length(del_keynodes_ids) > 0
+        #     # del_keynodes_ids 需要去重
+        #     del_keynodes_ids_uniqued = unique(del_keynodes_ids)
+        #     # delete_obj(collection_name, del_keynodes_ids_uniqued)
+        #     del_keynodes_ids_uniqued_array = Array{Int64}(del_keynodes_ids_uniqued)
+        #     remove_with_ids(collection_name, del_keynodes_ids_uniqued_array)
+        #     size_keynotes -= length(del_keynodes_ids_uniqued)
+        # end
+        # println(f"keynodes_feats:\(size(keynodes_feats)), del_keynodes_ids:\(size(del_keynodes_ids)), \(size_keynotes)")
+        vectors = []
+        # ids = []
+    end
+
+    state["hac"].num = num
+    state["hac"].nodes = nodes
+    state["hac"].clusters = clusters
+    state["hac"].vectors = vectors
+    state["hac"].ids = ids
+    state["hac"].size_keynotes = size_keynotes
+
+    return data, state
+end
 
 # --------------------------------------------------------------
 # 辅助函数

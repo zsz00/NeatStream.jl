@@ -115,7 +115,7 @@ function processElement(print_op::PrintOperator, input_element::StreamRecord)::S
         op_state = tf.operator.state
         op_state_1 = operator.name == "hac" ? length(op_state["hac"].clusters) : 0
         op_state_2 = operator.name == "hac" ? length(op_state["hac"].nodes) : 0
-        println("\(tf.name), \(tf.operator.name), op_state.nodes:\(op_state_2), op_state.clusters:\(op_state_1)")
+        # println("\(tf.name), \(tf.operator.name), op_state.nodes:\(op_state_2), op_state.clusters:\(op_state_1)")
     end
     output = input_element
     return output

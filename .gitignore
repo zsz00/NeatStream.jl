@@ -3,8 +3,10 @@
 *.jl.mem
 .DS_Store
 .vscode
+*.pyc
 *Manifest.toml
 /dev/
 /docs/build/
 /docs/site/
 datasets/
+.CondaPkg

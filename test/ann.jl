@@ -1,9 +1,15 @@
 # ann, similarity search. 2021.5.22
+ENV["JULIA_PYTHONCALL_EXE"] = "/home/zhangyong/miniconda3/bin/python"
+using PythonCall
+sys = pyimport("sys")
+# np = pyimport("numpy")
+
 using NPZ, JLD2, FileIO, Dates
 using Strs, JSON3
 using NearestNeighbors, Distances
-using SimilaritySearch
-# include("faiss_api.jl")
+# using SimilaritySearch
+using ProgressMeter
+using Faiss
 
 
 function rank_1(feats, top_k, n)
@@ -68,11 +74,24 @@ function rank_4(gallery, query, top_k, n)
     # feats = matix2Vectors(feats)
 
     index = ExhaustiveSearch(NormalizedCosineDistance(), gallery)   # gallery是Vectors,不支持增量add
-    out = [search(index, q, KnnResult(top_k)) for q in query]
+    out = [SimilaritySearch.search(index, q, KnnResult(top_k)) for q in query]
     # 后处理
     dists, idxs = prcoess_ss(out, top_k)  # 解析
     idxs = idxs .+ n
 
+    return dists, idxs
+end
+
+function rank_5(gallery, query, top_k, n)
+    # base Faiss.jl. ok
+    if isa(gallery, Vector)
+        gallery = vcat((hcat(i...) for i in gallery)...)  # Vectors -> Matrix
+        query = vcat((hcat(i...) for i in query)...)
+    end
+
+    dists, idxs = local_rank(query, gallery; k=top_k, gpus="")
+    idxs = idxs .+ (n+1)
+    # idxs = convert(Matrix{Int64}, idxs)
     return dists, idxs
 end
 
@@ -125,5 +144,43 @@ function test_ss()
     return out
 end
 
+function test_faiss()
+    dir_1 = "/mnt/zy_data/data/longhu_1/sorted_2/"
+    feats = np.load(joinpath(dir_1, "feats.npy"))
+    println(typeof(feats), feats.shape)
+
+    feats = pyconvert(Array{Float32, 2}, feats) 
+
+    feat_dim = size(feats, 2)
+    idx = Index(feat_dim; str="IDMap2,Flat", gpus="4")  # IDMap2
+    k = 100
+    @showprogress for i in range(1, 1000)
+        vs_gallery = feats[100*i+1:100*(i+1),:]
+        # println(typeof(feats), size(feats))
+        vs_query = vs_gallery
+        
+        # D, I = add_search(idx, vs_query, vs_gallery; k=10, flag=true, metric="cos")
+        # println(typeof(D), size(D))
+        
+        ids = collect(range(100*i+1, 100*(i+1))) .+ 100
+        println(typeof(ids), size(ids))
+        add_with_ids(idx, vs_gallery, ids)
+        D, I = search(idx, vs_query, k) 
+        # println(typeof(D), size(D))
+        println(typeof(I), size(I))
+        println(I[1:2, 1:5])
+
+    end
+end
+
 
 # test_ss()
+# test_faiss()
+
+
+#=
+julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyong/codes/NeatStream.jl/test/ann.jl"
+
+
+=#
+
