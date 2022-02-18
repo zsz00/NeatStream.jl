@@ -152,7 +152,7 @@ function test_faiss()
     feats = pyconvert(Array{Float32, 2}, feats) 
 
     feat_dim = size(feats, 2)
-    idx = Index(feat_dim; str="IDMap2,Flat", gpus="4")  # IDMap2
+    idx = Index(feat_dim; str="IDMap2,Flat", metric="IP", gpus="4")  # IDMap2. metric:L2,IP
     k = 100
     @showprogress for i in range(1, 1000)
         vs_gallery = feats[100*i+1:100*(i+1),:]
@@ -177,10 +177,7 @@ end
 # test_ss()
 # test_faiss()
 
-
 #=
 julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyong/codes/NeatStream.jl/test/ann.jl"
 
-
 =#
-

@@ -5,7 +5,6 @@
 using Strs, JSON3, Base64
 # using NearestNeighbors, Distances
 # using LinearAlgebra, Statistics
-# using Faiss
 
 
 mutable struct Node <: Any
@@ -235,18 +234,12 @@ function hac_2(data, state)
         feats_2 = vectors  # 不用knn
         
         # search top_k 
-        # dists_1, idxs_1 = rank_2(feats_1, top_k, num-batch_size)    # 在本批查询, NN.jl
-        # dists_1, idxs_1 = rank_3(gallery, query, ids, top_k)        # 在本批查询, NN.jl
-        # dists_1, idxs_1 = rank_4(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, SS.jl
         dists_1, idxs_1 = rank_5(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, Faiss.jl
 
-        # rank_result = search_obj(collection_name, feats_2, top_k)  # search rank in milvus/fse 
-        # dists_2, idxs_2 = prcoess_results_3(rank_result, top_k)
         if num == batch_size   # 第一个batch
             dists_2 = zeros(Float32, (0, top_k))
             idxs_2 = zeros(Int64, (0, top_k))
         else
-            # dists_2, idxs_2 = search_obj_batch(collection_name, feats_2, top_k)
             feats_2_matrix = vcat((hcat(i...) for i in feats_2)...)
             dists_2, idxs_2 = search(collection_name, feats_2_matrix, top_k)
         end
@@ -322,7 +315,6 @@ function hac_2(data, state)
 
         if length(keynodes_ids) > 0
             # println(f"\(collection_name), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
-            # insert_obj(collection_name, keynodes_feats, keynodes_ids)   # add  慢
             keynodes_feats_matrix = vcat((hcat(i...) for i in keynodes_feats)...)
             keynodes_ids_matrix = Array{Int64}(keynodes_ids)
             add_with_ids(collection_name, keynodes_feats_matrix, keynodes_ids_matrix)
@@ -331,7 +323,6 @@ function hac_2(data, state)
         # if length(del_keynodes_ids) > 0
         #     # del_keynodes_ids 需要去重
         #     del_keynodes_ids_uniqued = unique(del_keynodes_ids)
-        #     # delete_obj(collection_name, del_keynodes_ids_uniqued)
         #     del_keynodes_ids_uniqued_array = Array{Int64}(del_keynodes_ids_uniqued)
         #     remove_with_ids(collection_name, del_keynodes_ids_uniqued_array)
         #     size_keynotes -= length(del_keynodes_ids_uniqued)
@@ -592,5 +583,3 @@ function eval_1(file_name)
     """
 end
 =#
-
-

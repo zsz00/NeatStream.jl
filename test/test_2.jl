@@ -58,14 +58,13 @@ function HAC(th; batch_size::Int=10, top_k::Int=100)
     nodes = Dict()     # 节点信息.  最好只存代表点
     clusters = Dict("0"=>Cluster("0", 0, 0, [], 0, 0))    # 簇信息 
     tracks = Dict()    # 跟踪信息
-    collection_name = Index(384; str="IDMap2,Flat", gpus="4")  # String creat_collection("repo_test_2", 384)   # init index
+    collection_name = Index(384; str="IDMap2,Flat", metric="IP", gpus="4")  # init index # IDMap2. metric:L2,IP 
     vectors = []  # 把一批的feat存到状态里. 为batch加的
     ids = []
     size_keynotes = 0      # 代表点数量
     hac_state = HAC(top_k, th, batch_size, num, nodes, clusters, tracks, collection_name, vectors, ids, size_keynotes)
     return hac_state
 end
-
 
 function test_hac()
     # hac demo. 
