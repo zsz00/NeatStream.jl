@@ -1,7 +1,8 @@
 module NeatStream
 using Revise
 using CSV, DataFrames
-using ProgressMeter, Strs
+using ProgressMeter
+using FLoops
 
 include("event.jl")
 include("element.jl")
@@ -21,7 +22,7 @@ include("connector.jl")
 
 export Environment, from_elements, execute, Transformation, DataStream, 
 map, processElement, process, ProcessFunction,
-readTextFile, print_out
+readTextFile, print_out, execute_channel
 
 end # module
 

@@ -110,14 +110,14 @@ end
 function execute(env::Environment, job_name::String)
     # data = env.args["data"]
     println("开始执行job:", job_name)
-    println(env.transformations[1])
+    # println(env.transformations[1])
     stream_source_tf = env.transformations[1]
     all_data = stream_source_tf.operator.data   # stream_source,数据源
     # while true # hasnext(stream_source_tf.operator)   # 每个iter
         # data = next(stream_source.operator)
     # prog = Progress(100000, 1, "Computing pass:")
     prog = ProgressUnknown("Titles read:")
-    for data in all_data   # data_loader. each data
+    for data in all_data   # data_loader. each data, iterate
         # println("input: ", data)
         for tf in env.transformations[2:end]   # map,process. each op.  
             # data = tf(op(process_element(data)))  # 逻辑的
@@ -125,7 +125,7 @@ function execute(env::Environment, job_name::String)
             data = isa(data, StreamRecord) ? data : StreamRecord(data)
             
             data = processElement(operator, data)   # out = op(data)
-            
+            # @reduce(data=op(data))   # 改为Floops.jl. 这些功能在Transfomers里是不是已经有了?
         end
         next!(prog)
         # println("out: ", data)
@@ -133,6 +133,36 @@ function execute(env::Environment, job_name::String)
     # return data
 end
 
+function execute_channel(env::Environment, job_name::String)
+    # 加 channel异步
+    println("开始执行job:", job_name)
+    # println(env.transformations[1])
+    stream_source_tf = env.transformations[1]
+    all_data = stream_source_tf.operator.data   # stream_source,数据源
+
+    op_num = length(env.transformations)
+    q_list = [Channel(32) for i in 1:op_num]
+
+    prog = ProgressUnknown("Titles read:")
+    
+    for data in all_data   # data_loader. each data, iterate  @sync 
+        put!(q_list[1], data)
+
+        Threads.@spawn for (k, tf) in enumerate(env.transformations[2:end])   # map,process. each op.
+            # println("k:$k") 
+            data = take!(q_list[k])
+            operator = tf.operator
+            data = isa(data, StreamRecord) ? data : StreamRecord(data)
+            data = processElement(operator, data)   # out = op(data)
+            if k < op_num
+                put!(q_list[k+1], data)
+            end
+        end
+        # next!(prog)
+        # println("out: ", data)
+    end
+    # return data
+end
 
 function getStreamGraph(env::Environment, jobName::String, clearTransformations::Bool)::StreamGraph
     streamGraph::StreamGraph = generate(env.getStreamGraphGenerator(jobName))
@@ -161,5 +191,14 @@ end
 #=
 flink.env 
 flink\streaming\api\environment\StreamExecutionEnvironment.class
-=#
+
+有状态的
+for 可以加 FLoops.jl加速? 
+ERROR: LoadError: MethodError: no method matching length(::Base.EachLine{IOStream})
+
+加queue或channel 进行异步
+
+--------------------------------
+
+=# 
 

@@ -41,7 +41,7 @@ function hac_1(data, state)
     num = hac_state.num
     nodes = hac_state.nodes
     clusters = hac_state.clusters
-    collection_name = hac_state.collection_name
+    index = hac_state.index
     vectors = hac_state.vectors
     ids = hac_state.ids
     size_keynotes = hac_state.size_keynotes
@@ -74,7 +74,7 @@ function hac_1(data, state)
         gallery = vectors  # vcat((hcat(i...) for i in vectors)...)  # Vectors -> Matrix
         query = gallery
         # ids = vcat((hcat(i...) for i in ids)...)
-        feats_1 = knn_feat(collection_name, gallery, query, num-batch_size)  # knn
+        feats_1 = knn_feat(index, gallery, query, num-batch_size)  # knn
         feats_2 = matix2Vectors(feats_1)   # knn feats
         # feats_2 = vectors  # 不用knn
         
@@ -84,13 +84,13 @@ function hac_1(data, state)
         # dists_1, idxs_1 = rank_4(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, SS.jl
         dists_1, idxs_1 = rank_5(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, Faiss.jl
 
-        # rank_result = search_obj(collection_name, feats_2, top_k)  # search rank in milvus/fse 
+        # rank_result = search_obj(index, feats_2, top_k)  # search rank in milvus/fse 
         # dists_2, idxs_2 = prcoess_results_3(rank_result, top_k)
         if num == batch_size   # 第一个batch
             dists_2 = zeros(Float32, (0, top_k))
             idxs_2 = zeros(Int32, (0, top_k))
         else
-            dists_2, idxs_2 = search_obj_batch(collection_name, feats_2, top_k)
+            dists_2, idxs_2 = search_obj_batch(index, feats_2, top_k)
         end
         # println(f"\(size(dists_1)), \(size(dists_2))")
         dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)
@@ -163,14 +163,14 @@ function hac_1(data, state)
         end
 
         if length(keynodes_ids) > 0
-            # println(f"\(collection_name), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
-            insert_obj(collection_name, keynodes_feats, keynodes_ids)   # add  慢
+            # println(f"\(index), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
+            insert_obj(index, keynodes_feats, keynodes_ids)   # add  慢
             size_keynotes += length(keynodes_feats)
         end
         if length(del_keynodes_ids) > 0
             # del_keynodes_ids 需要去重
             del_keynodes_ids_uniqued = unique(del_keynodes_ids)
-            delete_obj(collection_name, del_keynodes_ids_uniqued)
+            delete_obj(index, del_keynodes_ids_uniqued)
             size_keynotes -= length(del_keynodes_ids_uniqued)
         end
         # println(f"keynodes_feats:\(size(keynodes_feats)), del_keynodes_ids:\(size(del_keynodes_ids)), \(size_keynotes)")
@@ -196,19 +196,17 @@ function hac_2(data, state)
     num = hac_state.num
     nodes = hac_state.nodes
     clusters = hac_state.clusters
-    collection_name = hac_state.collection_name
+    index = hac_state.index
     vectors = hac_state.vectors
     ids = hac_state.ids
     size_keynotes = hac_state.size_keynotes
 
     num += 1
-    node_st1 = data   # # 无同镜
-    # println(f"node:\(node_st1)")
+    node_st1 = data   # 无同镜
     node = node_st1
     feat_1 = node.feature   # 特征
     n_id = node.n_id
     c_id = node.c_id
-    # cluster = clusters_st1[c_id]   # 同镜
     cluster = Cluster(c_id, 1, 1, [n_id], 0, 0)    # 无同镜
 
     # init. 存了所有点
@@ -228,8 +226,8 @@ function hac_2(data, state)
         # query 
         gallery = vectors  # vcat((hcat(i...) for i in vectors)...)  # Vectors -> Matrix
         query = gallery
-        # ids = vcat((hcat(i...) for i in ids)...)
-        # feats_1 = knn_feat(collection_name, gallery, query, num-batch_size)  # knn
+        # ids = vcat((hcat(i...) for i in ids)...) 
+        # feats_1 = knn_feat(index, gallery, query, num-batch_size)  # knn
         # feats_2 = matix2Vectors(feats_1)   # knn feats
         feats_2 = vectors  # 不用knn
         
@@ -241,7 +239,7 @@ function hac_2(data, state)
             idxs_2 = zeros(Int64, (0, top_k))
         else
             feats_2_matrix = vcat((hcat(i...) for i in feats_2)...)
-            dists_2, idxs_2 = search(collection_name, feats_2_matrix, top_k)
+            dists_2, idxs_2 = search(index, feats_2_matrix, top_k)
         end
         # println(f"\(size(dists_1)), \(size(dists_2))")
         dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)
@@ -314,17 +312,17 @@ function hac_2(data, state)
         end
 
         if length(keynodes_ids) > 0
-            # println(f"\(collection_name), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
+            # println(f"\(index), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
             keynodes_feats_matrix = vcat((hcat(i...) for i in keynodes_feats)...)
             keynodes_ids_matrix = Array{Int64}(keynodes_ids)
-            add_with_ids(collection_name, keynodes_feats_matrix, keynodes_ids_matrix)
+            add_with_ids(index, keynodes_feats_matrix, keynodes_ids_matrix)
             size_keynotes += length(keynodes_feats)
         end
         # if length(del_keynodes_ids) > 0
         #     # del_keynodes_ids 需要去重
         #     del_keynodes_ids_uniqued = unique(del_keynodes_ids)
         #     del_keynodes_ids_uniqued_array = Array{Int64}(del_keynodes_ids_uniqued)
-        #     remove_with_ids(collection_name, del_keynodes_ids_uniqued_array)
+        #     remove_with_ids(index, del_keynodes_ids_uniqued_array)
         #     size_keynotes -= length(del_keynodes_ids_uniqued)
         # end
         # println(f"keynodes_feats:\(size(keynodes_feats)), del_keynodes_ids:\(size(del_keynodes_ids)), \(size_keynotes)")
@@ -411,7 +409,7 @@ function prase_json(json_data)
     return node
 end
 
-function knn_feat(collection_name, gallery, query, n)
+function knn_feat(index, gallery, query, n)
     # knn feat merge
     # knn_feats = mean(top_5 && cos>0.5)(feats)
     top_k = 5
@@ -423,7 +421,7 @@ function knn_feat(collection_name, gallery, query, n)
     dists_1, idxs_1 = rank_4(query, query, top_k, n)  # 在本批查询, 基于SimilaritySearch.jl
 
     query_1 = query  # matix2Vectors(query)
-    rank_result = search_obj(collection_name, query_1, 5)   # search top5 in milvus/fse 
+    rank_result = search_obj(index, query_1, 5)   # search top5 in milvus/fse 
     dists_2, idxs_2 = prcoess_results_3(rank_result, 5)  
     
     dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)  # 合并  100*10
@@ -448,7 +446,7 @@ function knn_feat(collection_name, gallery, query, n)
         feat_1 = feats_1[idx_org_1, :]
 
         if length(idx_org_2) > 0
-            feat_2 = get_feat(collection_name, idx_org_2)  # 从历史库里取出feat
+            feat_2 = get_feat(index, idx_org_2)  # 从历史库里取出feat
             if length(feat_2) > 0
                 tmp_feats = vcat(feat_1, feat_2)
             else
@@ -483,7 +481,7 @@ function knn_feat_2(index, gallery, query, n)
     query_1 = query
     gallery = []
     dists_2, idxs_2 = rank(index, query, gallery; topk=5)
-    # rank_result = search_obj(collection_name, query_1, 5)   # search top5 in milvus/fse 
+    # rank_result = search_obj(index, query_1, 5)   # search top5 in milvus/fse 
     # dists_2, idxs_2 = prcoess_results_3(rank_result, 5)  
     
     dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)  # 合并  100*10
@@ -508,7 +506,7 @@ function knn_feat_2(index, gallery, query, n)
         feat_1 = feats_1[idx_org_1, :]
 
         if length(idx_org_2) > 0
-            feat_2 = get_feat(collection_name, idx_org_2)  # 从历史库里取出feat
+            feat_2 = get_feat(index, idx_org_2)  # 从历史库里取出feat
             if length(feat_2) > 0
                 tmp_feats = vcat(feat_1, feat_2)
             else

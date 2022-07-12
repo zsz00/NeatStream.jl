@@ -1,16 +1,15 @@
 # online cluster base on Transducers.   2021.1.30, 2021.3, 2021.5
 using Transducers
 using Transducers: R_, start, next, complete, inner, xform, wrap, unwrap, wrapping
-using NPZ, JLD2, FileIO
+# using NPZ, JLD2, FileIO
 using Strs, JSON3, Base64
-using NearestNeighbors, Distances
 using LinearAlgebra, Statistics
-using PyCall, BenchmarkTools
+# using PyCall, BenchmarkTools
 using ThreadsX
 using Folds, FoldsThreads
 using BangBang  # for `push!!`
-include("milvus_api.jl")
-include("keyby.jl")
+# include("milvus_api.jl")
+# include("keyby.jl")
 include("ann.jl")
 
 
@@ -153,8 +152,8 @@ struct HAC <: Transducer
     batch_size::Int32   
 end
 
-HAC() = HAC(100, 0.5, 100)  # 初始化结构体
-coll_name = creat_collection("repo_test_2", 384)
+HAC() = HAC(100, 0.5, 100)
+# coll_name = creat_collection("repo_test_2", 384)
 
 function Transducers.start(rf::R_{HAC}, result)  
     hac = xform(rf)
@@ -162,12 +161,12 @@ function Transducers.start(rf::R_{HAC}, result)
     nodes = Dict()     # 节点信息.  最好只存代表点
     clusters = Dict("0"=>Cluster("0", 0, 0, [], 0, 0))    # 簇信息 
     tracks = Dict()    # 跟踪信息
-    collection_name = coll_name  # creat_collection("repo_test_2", 384)   # init index
+    index = Index(384; str="IDMap2,Flat", metric="IP", gpus="4")  # init index 
     vectors = []  # 把一批的feat存到状态里. 为batch加的
     ids = []
     size_keynotes = 0      # 代表点数量
 
-    private_state = (hac, num, nodes, clusters, collection_name, vectors, ids, size_keynotes)   # 初始化私有状态
+    private_state = (hac, num, nodes, clusters, index, vectors, ids, size_keynotes)   # 初始化私有状态
     # 状态里存储了 img_url, feature 比较大. 
 
     result = wrap(rf, private_state, start(inner(rf), result))
@@ -176,7 +175,7 @@ end
 
 function Transducers.next(rf::R_{HAC}, result, input)
     wrapping(rf, result) do private_state, iresult
-        (hac, num, nodes, clusters, collection_name, vectors, ids, size_keynotes) = private_state  # 本op的state
+        (hac, num, nodes, clusters, index, vectors, ids, size_keynotes) = private_state  # 本op的state
 
         top_k = hac.top_k
         th = hac.th
@@ -212,23 +211,16 @@ function Transducers.next(rf::R_{HAC}, result, input)
             # query 
             gallery = vectors  # vcat((hcat(i...) for i in vectors)...)  # Vectors -> Matrix
             query = gallery
-            # ids = vcat((hcat(i...) for i in ids)...)
-            feats_1 = knn_feat(collection_name, gallery, query, num-batch_size)  # knn
-            feats_2 = matix2Vectors(feats_1)   # knn feats
-            # feats_2 = vectors  # 不用knn
-            
+            feats_2 = vectors  # 不用knn
             # search top_k 
-            # dists_1, idxs_1 = rank_2(feats_1, top_k, num-batch_size)    # 在本批查询, NN.jl
-            # dists_1, idxs_1 = rank_3(gallery, query, ids, top_k)        # 在本批查询, NN.jl
-            dists_1, idxs_1 = rank_4(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, SS.jl
+            dists_1, idxs_1 = rank_5(feats_2, feats_2, top_k, num-batch_size)  # 在本批查询, Faiss.jl
 
-            # rank_result = search_obj(collection_name, feats_2, top_k)  # search rank in milvus/fse 
-            # dists_2, idxs_2 = prcoess_results_3(rank_result, top_k)
             if num == batch_size
                 dists_2 = zeros(Float32, (0, top_k))
                 idxs_2 = zeros(Int32, (0, top_k))
             else
-                dists_2, idxs_2 = search_obj_batch(collection_name, feats_2, top_k)
+                feats_2_matrix = vcat((hcat(i...) for i in feats_2)...)
+                dists_2, idxs_2 = search(index, feats_2_matrix, top_k)
             end
             # println(f"\(size(dists_1)), \(size(dists_2))")
             dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)
@@ -287,29 +279,33 @@ function Transducers.next(rf::R_{HAC}, result, input)
                 if quality_2_1
                     if cos_1 <= 1 && cluster_1.c_key_size < 10   # add  0.95
                         push!(keynodes_feats, feats_2[i])   # 代表点
-                        push!(keynodes_ids, string(num_1))   # 代表点  node_1.n_id
+                        push!(keynodes_ids, num_1)   # 代表点  node_1.n_id
                         cluster_1.c_key_size += 1
                     elseif cos_1 >= 0.55 && cluster_1.c_key_size >= 10
                         node_2 = nodes[ids[idx_y[2]]]
                         if node_1.blur>node_2.blur  # update
                             push!(keynodes_feats, feats_2[i])   # 代表点
-                            push!(keynodes_ids, string(num_1))    # 代表点
-                            push!(del_keynodes_ids, string(idx_y[2]))   # 要被删除的id. 
+                            push!(keynodes_ids, num_1)    # 代表点
+                            push!(del_keynodes_ids, idx_y[2])   # 要被删除的id. 
                         end
                     end
                 end
             end
   
             if length(keynodes_ids) > 0
-                # println(f"\(collection_name), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
-                insert_obj(collection_name, keynodes_feats, keynodes_ids)   # add  慢
+                # println(f"\(index), keynodes_feats:\(size(keynodes_feats)), keynodes_ids:\(size(keynodes_ids))")
+                # insert_obj(index, keynodes_feats, keynodes_ids)   # add  慢
+                keynodes_feats_matrix = vcat((hcat(i...) for i in keynodes_feats)...)
+                keynodes_ids_matrix = Array{Int64}(keynodes_ids)
+                add_with_ids(index, keynodes_feats_matrix, keynodes_ids_matrix)
                 size_keynotes += length(keynodes_feats)
             end
             if length(del_keynodes_ids) > 0
                 # del_keynodes_ids 需要去重
                 del_keynodes_ids_uniqued = unique(del_keynodes_ids)
-                delete_obj(collection_name, del_keynodes_ids_uniqued)
-                size_keynotes -= length(del_keynodes_ids_uniqued)
+                del_keynodes_ids_uniqued_array = Array{Int64}(del_keynodes_ids_uniqued)
+                # remove_with_ids(index, del_keynodes_ids_uniqued_array)
+                # size_keynotes -= length(del_keynodes_ids_uniqued)
             end
             # println(f"keynodes_feats:\(size(keynodes_feats)), del_keynodes_ids:\(size(del_keynodes_ids)), \(size_keynotes)")
             vectors = []
@@ -318,7 +314,7 @@ function Transducers.next(rf::R_{HAC}, result, input)
 
         iinput = (hac, num, nodes, size_keynotes)  # 就是输出. 状态
         iresult = next(inner(rf), iresult, iinput)
-        return (hac, num, nodes, clusters, collection_name, vectors, ids, size_keynotes), iresult
+        return (hac, num, nodes, clusters, index, vectors, ids, size_keynotes), iresult
     end   # do end
 end
 
@@ -397,7 +393,7 @@ function prase_json(json_data)
     return node
 end
 
-function knn_feat(collection_name, gallery, query, n)
+function knn_feat(index, gallery, query, n)
     # knn feat merge
     # knn_feats = mean(top_5 && cos>0.5)(feats)
     top_k = 5
@@ -409,7 +405,7 @@ function knn_feat(collection_name, gallery, query, n)
     dists_1, idxs_1 = rank_4(query, query, top_k, n)  # 在本批查询, 基于SimilaritySearch.jl
 
     query_1 = query  # matix2Vectors(query)
-    rank_result = search_obj(collection_name, query_1, 5)   # search top5 in milvus/fse 
+    rank_result = search_obj(index, query_1, 5)   # search top5 in milvus/fse 
     dists_2, idxs_2 = prcoess_results_3(rank_result, 5)  
     
     dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)  # 合并  100*10
@@ -434,7 +430,7 @@ function knn_feat(collection_name, gallery, query, n)
         feat_1 = feats_1[idx_org_1, :]
 
         if length(idx_org_2) > 0
-            feat_2 = get_feat(collection_name, idx_org_2)  # 从历史库里取出feat
+            feat_2 = get_feat(index, idx_org_2)  # 从历史库里取出feat
             if length(feat_2) > 0
                 tmp_feats = vcat(feat_1, feat_2)
             else
@@ -469,7 +465,7 @@ function knn_feat_2(index, gallery, query, n)
     query_1 = query
     gallery = []
     dists_2, idxs_2 = rank(index, query, gallery; topk=5)
-    # rank_result = search_obj(collection_name, query_1, 5)   # search top5 in milvus/fse 
+    # rank_result = search_obj(index, query_1, 5)   # search top5 in milvus/fse 
     # dists_2, idxs_2 = prcoess_results_3(rank_result, 5)  
     
     dists = size(dists_2)[1] == 0 ? dists_1 : hcat(dists_1, dists_2)  # 合并  100*10
@@ -494,7 +490,7 @@ function knn_feat_2(index, gallery, query, n)
         feat_1 = feats_1[idx_org_1, :]
 
         if length(idx_org_2) > 0
-            feat_2 = get_feat(collection_name, idx_org_2)  # 从历史库里取出feat
+            feat_2 = get_feat(index, idx_org_2)  # 从历史库里取出feat
             if length(feat_2) > 0
                 tmp_feats = vcat(feat_1, feat_2)
             else
@@ -538,6 +534,7 @@ function matix2Vectors(b)
     return c
 end
 
+#=
 function eval_1(file_name)
     # pushfirst!(PyVector(pyimport("sys")."path"), "")
     # pushfirst!(PyVector(pyimport("sys")."path"), "../..")
@@ -549,7 +546,6 @@ function eval_1(file_name)
     sys.path.insert(0, "")
     sys.path.insert(0, "cluster")
     from utils import eval_cluster
-
 
     dir_1 = "/mnt/zy_data/data/pk/pk_13/output_1"
     cluster_path = os.path.join(dir_1, "out_1", $file_name)
@@ -567,6 +563,7 @@ function eval_1(file_name)
 
     """
 end
+=#
 
 # --------------------------------------------------------------
 # 主函数
@@ -575,20 +572,32 @@ function test_1(input_path, out_path)
     println("test_1()")
     println("nthreads:", Threads.nthreads())
     # load data
-    input_json = open(input_path)
-    json_data = collect(eachline(input_json))
+    if endswith(input_path, "json")   # josn data
+        input_json = open(input_path)
+        row_data = eachline(input_json)
+        prase_func = prase_json
+    else      # table row data
+        input_table = pd.read_pickle(input_path)
+        # input_table = DataFrame(input_table)
+        row_data = Tables.rows(input_table)
+        prase_func = prase_table
+    end
+
     t1 = Dates.now()
     # stream pipeline
     op_st_1 = Spacetime1_Cluster()  # 同镜, on a camera
     op_hac = HAC()   # 全局, on all camera
-    aa = Transducers.foldl(right, json_data |> Map(prase_json) |> op_hac |> collect)
-    # aa = Transducers.foldl(right, eachline(input_json) |> Map(prase_json) |> KeyBy((x -> x.device_id), op_st_1)|> op_hac |> collect )
+
+    # aa = Transducers.foldl(right, row_data |> Map(prase_json) |> op_hac |> collect)
+    # aa = Transducers.foldl(right, row_data |> Map(prase_json) |> KeyBy((x -> x.device_id), op_st_1)|> op_hac |> collect )
     # KeyBy((x -> x.device_id), op_st_1) |>  |> op_hac    foldl foldxt
-    # aa = Folds.reduce((right, json_data |> Map(prase_json) |> op_hac |> tcollect), NondeterministicEx()) 
+    # aa = Folds.reduce((right, row_data |> Map(prase_json) |> op_hac |> tcollect), NondeterministicEx()) 
     # collect   reduce   tcollect
+ 
+    aa = Transducers.foldl(right, row_data |> Map(prase_func) |> op_hac |> collect)
 
     hac, num, nodes, size_keynotes_stat = aa
-    coll_info = get_coll_info("repo_test_2")
+
     datetime_now = Dates.format(Dates.now(), "yyyy-mm-dd HH:MM:SS")
     used_time = (Dates.now() - t1).value/1000
     println(f"\(datetime_now), used:\%.1f(used_time)s=\%.1f(used_time/60)min")
@@ -596,62 +605,61 @@ function test_1(input_path, out_path)
     # 获取结果
     labels = [node.c_id for node in values(nodes)]
     id_sum = length(Set(labels))
-    size_keynotes = coll_info["count"]
+    size_keynotes = 100
     println(f"img_sum:\(length(labels)), id_sum:\(id_sum), keynotes_sum_stat:\(size_keynotes_stat), keynotes_sum:\(size_keynotes), \%.1f(size_keynotes/id_sum)img/id")
     
     # 结果保存和评估
-    f_out = open(out_path, "w")
-    for node in values(nodes)
-        ss = f"\(node.obj_id),\(node.c_id)\n"
-        write(f_out, ss)
+    eval = false
+    if eval
+        f_out = open(out_path, "w")
+        for node in values(nodes)
+            ss = f"\(node.obj_id),\(node.c_id)\n"
+            write(f_out, ss)
+        end
+        file_name = basename(out_path)
+        eval_1(file_name)   # 评估
     end
-    file_name = basename(out_path)
-    eval_1(file_name)   # 评估
 end
 
 function test_1_2(input_path, out_path)
-    # cluster online   2021.1.16, 2021.8.10 测试foldxt.   
+    # cluster online   2021.1.16, 2021.8.10, 2022.2.20 
     println("test_1_2()")
     println("nthreads:", Threads.nthreads())
     # load data
     input_json = open(input_path)
-    json_data = collect(eachline(input_json))
-    # json_data = eachline(input_json)
+    # json_data = collect(eachline(input_json))
+    json_data = eachline(input_json)
     # stream pipeline
     # op_st_1 = Spacetime1_Cluster()  # 同镜, on a camera
     op_hac = HAC()   # 全局, on all camera
-    Transducers.foldxt(right, json_data |> Map(prase_json) |> op_hac |> tcollect)
+    aa = Transducers.foldl(right, json_data |> Map(prase_json) |> op_hac |> collect)
+    # aa = Transducers.foldxt(right, json_data |> Map(prase_json) |> op_hac |> tcollect)
     # foldl  foldxt  tcollect
-    # prase_json可以, op_hac不行
+    hac, num, nodes, size_keynotes_stat = aa
+    # 获取结果
+    labels = [node.c_id for node in values(nodes)]
+    id_sum = length(Set(labels))
+    size_keynotes = 100
+    println(f"img_sum:\(length(labels)), id_sum:\(id_sum), keynotes_sum_stat:\(size_keynotes_stat), keynotes_sum:\(size_keynotes), \%.1f(size_keynotes/id_sum)img/id")
+    
 end
-
-function test_2()
-    println("nthreads:", Threads.nthreads())
-    # xs = randn(1000_000_000)
-    # # aa = foldl(+, Map(sin), xs)
-    # bb = foldxt(+, Map(sin), xs)
-    # print(bb)
-end
-
 
 function main()
     # input_path = "/data2/zhangyong/data/pk/pk_13/input/input_languang_5_2.json"   # input_languang_5_2
     input_path = "/mnt/zy_data/data/languang/input_languang_5_2.json"   # input_new.json
     out_path = "/mnt/zy_data/data/pk/pk_13/output_1/out_1/out_tmp_8.csv"
-    # test_1(input_path, out_path)
-    test_1_2(input_path, out_path)
+    test_1(input_path, out_path)
+    # test_1_2(input_path, out_path)  # 测试的, 是基于test_1
     # eval_1(basename(out_path))   # 评估
 end
 
 
 @time main()
-# test_2()
-
 
 
 #=
 export JULIA_NUM_THREADS=4
-julia stream/transducers_7.jl
+julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml test/transducer_7.jl
 ----------------------------------------
 TODO:
 0. 加多维信息   OK
@@ -662,23 +670,12 @@ TODO:
 4. 接入kafka数据源, 超内存的数据源, 流式的dataloader. OK
 5. 加窗口
 6. 并行flods    不通
-
-----------------------------------------
-input_data |> spacetime1_cluster(json) |> spacetime2_cluster(nodes, clsuters) |> global_hac(nodes, clsuters) |> output_data
-
-op1 = Spacetime1_Cluster    # PartitionBy(time)
-eachline(input_json) |> Map(prase_json) |> GroupBy((x -> x.device_id), op1) |> op2 |> ouput
-走通group by, 走通输出
+7. ann换为Faiss.jl   OK
 
 ----------------------------------------
 问题: 
-1. 没有可add的rank. 慢, 改为faiss[难]
-2. foldxt 并行不起作用, 因为不支持eachline
-3. 加了同镜, 会有问题.  2021.5.31
-
-milvus add with ids ,  OK
-有问题(c_id 找不到), 结果不能回归. 解决了此bug. ok
-还没 和同镜 联调, 联调OK
+1. 没有可add的rank. 慢, 改为faiss.  OK
+2. foldxt并行不起作用, 因为不支持eachline
 
 联调: 跑通. 很慢.  
 milvus很慢, gpu使用率非常低. cpu利用率也很低[40%]. 
@@ -690,7 +687,15 @@ used: 2113.4s=35.2min   foldxt
 used: 313.9s=5.2min  foldl  0.21机器,milvus也在这里
 used: 336.5s=5.6min  foldxt 0.21机器,milvus也在这里, nthreads=40, cpu,gpu没变. 
 
-248.5s=4.1min
+ann换为Faiss.jl 后: 10.9.1.8
+cpu: 
+img_sum:64182, id_sum:666, keynotes_sum_stat:4065, keynotes_sum:100, 0.2img/id
+ 71.457330 seconds (142.90 M allocations: 9.264 GiB, 9.76% gc time, 9.76% compilation time)
+gpu:
+img_sum:64182, id_sum:665, keynotes_sum_stat:17177, keynotes_sum:100, 0.2img/id
+ 68.120678 seconds (143.10 M allocations: 9.267 GiB, 9.48% gc time, 10.29% compilation time)
+
+CPU使用高, GPU使用低.
 
 =#
 

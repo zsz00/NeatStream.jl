@@ -1,7 +1,8 @@
 ENV["JULIA_PYTHONCALL_EXE"] = "/home/zhangyong/miniconda3/bin/python"
 using Revise
 using NeatStream
-using DataFrames, Chain
+using DataFrames
+using Strs
 include("ann.jl")
 include("util_1.jl")
 include("milvus_api.jl")
@@ -43,7 +44,7 @@ mutable struct HAC
     nodes::Dict    # 节点信息.  最好只存代表点
     clusters::Dict    # 簇信息 
     tracks::Dict    # 跟踪信息
-    collection_name::Any  # String  # creat_collection("repo_test_2", 384)   # init index
+    index::Any      # ann index, 相似度搜索库 
     vectors::Array  # 把一批的feat存到状态里. 为batch加的
     ids::Array
     size_keynotes::Int      # 代表点数量
@@ -58,28 +59,28 @@ function HAC(th; batch_size::Int=10, top_k::Int=100)
     nodes = Dict()     # 节点信息.  最好只存代表点
     clusters = Dict("0"=>Cluster("0", 0, 0, [], 0, 0))    # 簇信息 
     tracks = Dict()    # 跟踪信息
-    collection_name = Index(384; str="IDMap2,Flat", metric="IP", gpus="4")  # init index # IDMap2. metric:L2,IP 
+    index = Index(384; str="IDMap2,Flat", metric="IP", gpus="4")  # init index # IDMap2. metric:L2,IP 
     vectors = []  # 把一批的feat存到状态里. 为batch加的
     ids = []
     size_keynotes = 0      # 代表点数量
-    hac_state = HAC(top_k, th, batch_size, num, nodes, clusters, tracks, collection_name, vectors, ids, size_keynotes)
+    hac_state = HAC(top_k, th, batch_size, num, nodes, clusters, tracks, index, vectors, ids, size_keynotes)
     return hac_state
 end
 
 function test_hac()
-    # hac demo. 
+    # hac cluster demo.  2021.8.30 2022.2.15
     args_default = Dict("stream_time_type"=>1, "defaultStateBackend"=>"")
     env = Environment("test_hac", args_default)
 
     # source
     path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"  # 6.4w
-    data_stream_source = NeatStream.readTextFile(env, path)
+    data_stream_source = NeatStream.readTextFile(env, path)  # input txt, json, csv
 
     # op1
     parse_func = prase_json
     data_stream = NeatStream.map(data_stream_source, "parse_json", parse_func)
     # op2
-    hac_func = ProcessFunction(hac_2)  # hac_1慢
+    hac_func = ProcessFunction(hac_2)   # 全局聚类
     state = Dict("hac"=>HAC(0.5; batch_size=100), "count"=>0)
     data_stream = NeatStream.process(data_stream, "hac", hac_func, state)
 
@@ -99,13 +100,24 @@ end
 #=
 julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyong/codes/NeatStream.jl/test/test_2.jl"
 
-test_hac()跑通. 2021.8.30
+test_hac()改进. 2021.8.30, 2022.15, 2022.3.31
 
 6.4w 
 2121 seconds=35min (321.40 M allocations: 32.704 GiB, 0.38% gc time, 0.67% compilation time)
-3231.545560 seconds (321.86 M allocations: 32.778 GiB, 0.26% gc time, 0.48% compilation time)
+3231 seconds=54min (321.86 M allocations: 32.778 GiB, 0.26% gc time, 0.48% compilation time)
+
 3min faiss cpu bs=100
-2min faiss gpu bs=100
+1.5min faiss gpu bs=100, cpu使用率很高,all99%, gpu使用率不高
+
+17464,344
+ 81.988740 seconds
+
+加Floops.jl 
+ERROR: LoadError: MethodError: no method matching length(::Base.EachLine{IOStream})
+
+Transducers自己做了op包装,做成了统一接口.
+
+2022.7.12 加入execute_channel(), 支持异步op, ops并行
 
 =#
 

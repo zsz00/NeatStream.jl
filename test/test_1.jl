@@ -120,11 +120,11 @@ function test_5()
     add_sink(data_stream, print)
 
     execute(env, "test_job")
-    
 end
 
 function tt(data)
     data = data + 1
+    print("-")
     return data
 end
 
@@ -132,6 +132,7 @@ function tt2(data, state)
     data = data + 2
     state["count"] += 1
     # println("tt2: ", data)
+    print(".")
     return data, state
 end
 
@@ -148,17 +149,21 @@ function test_5_2()
     # data_stream_2 = DataStream(env, transform)
     # data_stream = union(data_stream_source, data_stream)
 
-    # println("data_stream_2:", data_stream_2)
+    # map(f1) 无状态
     parse_func = tt
     data_stream = NeatStream.map(data_stream, "tt", parse_func)
     
+    # process(f2,state)  有状态
     tt2_func = ProcessFunction(tt2)
     state = Dict("count"=>0)
     data_stream = process(data_stream, "tt2", tt2_func, state)
+
+    # sink op
     # add_sink(data_stream, print)
     # println("data_stream:", data_stream)
 
-    execute(env, "test_job")
+    # execute(env, "test_job")
+    execute_channel(env, "test_job")
     
 end
 
@@ -169,6 +174,7 @@ test_5_2()
 
 
 #=
+NeatStream
 julia>cd("/home/zhangyong/codes/NeatStream.jl")
 pkg>activate .
 julia>using NeatStream

@@ -7,6 +7,7 @@
 ## About
 
 NeatStream.jl aims to create a simple interface for working with streams, acting as an example in related problems such as the concept drift.
+based on [EasyStream.jl](https://github.com/ATISLabs/EasyStream.jl)
 
 ## Installation
 

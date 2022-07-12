@@ -259,6 +259,6 @@ stream.sink
 
 stream上的 方法和op不同, 这些方法可以处理op.
 
-ops 之间用 queue
-op 中用并行
+ops 之间用queue, op中用并行
+
 =#

@@ -1,5 +1,3 @@
-
-
 # 定义一个op
 # 定义op的数据结构, 即op_state
 struct Sum <: Operator
@@ -16,6 +14,4 @@ function apply!(sum::Sum, data::Any, event::Event)
     sum.init .+= data
     return nothing
 end
-
-
 

@@ -89,8 +89,8 @@ function rank_5(gallery, query, top_k, n)
         query = vcat((hcat(i...) for i in query)...)
     end
 
-    dists, idxs = local_rank(query, gallery; k=top_k, gpus="")
-    idxs = idxs .+ (n+1)
+    dists, idxs = local_rank(query, gallery; k=top_k, metric="IP", gpus="")  # gpu显存不回收.
+    idxs = idxs .+ n
     # idxs = convert(Matrix{Int64}, idxs)
     return dists, idxs
 end
