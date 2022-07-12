@@ -158,7 +158,7 @@ function execute_channel(env::Environment, job_name::String)
                 put!(q_list[k+1], data)
             end
         end
-        # next!(prog)
+        next!(prog)
         # println("out: ", data)
     end
     # return data

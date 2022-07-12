@@ -16,6 +16,9 @@ v0.0.5 2021.8.30
 v0.0.6 2022.2.13
 升级依赖, 匹配新版SimilaritySearch.jl的输出格式
 
+v0.1.0 2022.7.12
+加入execute_channel() 异步执行ops
+
 
 
 TODO

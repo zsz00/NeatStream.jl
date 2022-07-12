@@ -182,7 +182,7 @@ NeatStream
 julia>cd("/home/zhangyong/codes/NeatStream.jl")
 pkg>activate .
 julia>using NeatStream
-
+export JULIA_NUM_THREADS=4
 julia --project=/home/zhangyong/codes/NeatStream.jl/Project.toml "/home/zhangyong/codes/NeatStream.jl/test/test_1.jl"
 
 
