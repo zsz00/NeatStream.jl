@@ -137,26 +137,30 @@ function tt2(data, state)
 end
 
 function test_5_2()
-    # demo
+    # demo 
+    # init env
     args_default = Dict("stream_time_type" =>"", "defaultLocalParallelism"=>1)
     env = Environment("test_job", args_default)
 
+    # input/source
     data = 1:1000  # [1,2,3,4,5,6,7,8,9,10]
-    data_stream = from_elements(env, data)
-
-    # op = ""
-    # transform = Transformation("data_op", op)
-    # data_stream_2 = DataStream(env, transform)
-    # data_stream = union(data_stream_source, data_stream)
+    data_stream_source = from_elements(env, data)
+    # path = "/mnt/zy_data/data/languang/input_languang_5_2_new.json"
+    # data_stream_source = readTextFile(env, path)
 
     # map(f1) 无状态
     parse_func = tt
-    data_stream = NeatStream.map(data_stream, "tt", parse_func)
+    data_stream = NeatStream.map(data_stream_source, "tt", parse_func)
     
     # process(f2,state)  有状态
     tt2_func = ProcessFunction(tt2)
     state = Dict("count"=>0)
     data_stream = process(data_stream, "tt2", tt2_func, state)
+
+    # op = ""
+    # transform = Transformation("data_op", op)
+    # data_stream = DataStream(env, transform)
+    # data_stream = union(data_stream_source, data_stream)
 
     # sink op
     # add_sink(data_stream, print)

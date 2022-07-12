@@ -89,6 +89,8 @@ function test_hac()
     # add_sink(data_stream, print)
 
     execute(env, "test_job")
+    # execute_channel(env, "test_job")
+
     println("\n",state["hac"].size_keynotes, ",", length(state["hac"].clusters))
 end
 
@@ -107,7 +109,7 @@ test_hac()改进. 2021.8.30, 2022.15, 2022.3.31
 3231 seconds=54min (321.86 M allocations: 32.778 GiB, 0.26% gc time, 0.48% compilation time)
 
 3min faiss cpu bs=100
-1.5min faiss gpu bs=100, cpu使用率很高,all99%, gpu使用率不高
+1.5min faiss gpu bs=100, cpu使用率很高,all 99%, gpu使用率不高
 
 17464,344
  81.988740 seconds
