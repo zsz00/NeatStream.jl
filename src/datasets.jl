@@ -21,11 +21,11 @@ function Dataset1CDT(batch_size::Int)::BatchStream
 
     data = CSV.read(filename; header = false)
 
-    conn = EasyStream.TablesConnector(data)
+    # conn = EasyStream.TablesConnector(data)
 
-    stream = BatchStream(conn; batch_size = batch_size)
+    # stream = BatchStream(conn; batch_size = batch_size)
 
-    return stream
+    return data
 end
 
 Dataset1CDT() = Dataset1CDT(1)

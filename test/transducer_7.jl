@@ -393,6 +393,40 @@ function prase_json(json_data)
     return node
 end
 
+function prase_table(table_data)
+    # println(table_data)
+    data = table_data  # JSON3.read(json_data)  # string to dict
+
+    node = Node("0", "0", "", 1.0, [], 0, "", "", 0, 0, 1, 1, 1)   # init node
+    
+    node.blur = data.blur
+    feature_id = data.obj_id
+    feature = data.feature  # base64
+    # feature = base64decode(feature)
+    # feature = reinterpret(Float32, feature)
+    node.feature = feature
+    node.obj_id = feature_id
+    node.n_id = feature_id
+    node.c_id = feature_id
+    node.img_url = data.img_url
+
+    node.yaw = data.yaw
+    node.pitch = data.pitch
+    node.mask = data.mask
+    node.glass = data.glass
+    node.hat = data.hat
+    
+    node.timestamp = data.capture_timestamp  # 13位,毫秒.
+    node.device_id = data.device_id
+
+    if node.n_id == "26fa57aa-a3aa-4175-bcb4-2d89d3c1bab4"
+        println(f"====: \(node.obj_id), \(node.yaw), \(data.yaw), \(node.img_url)") 
+    end
+    # println(node)
+
+    return node
+end
+
 function knn_feat(index, gallery, query, n)
     # knn feat merge
     # knn_feats = mean(top_5 && cos>0.5)(feats)

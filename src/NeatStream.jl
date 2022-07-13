@@ -1,6 +1,6 @@
 module NeatStream
 using Revise
-using CSV, DataFrames
+using CSV, DataFrames, Tables
 using ProgressMeter
 using FLoops
 
@@ -20,9 +20,11 @@ include("drifts.jl")
 include("connector.jl")
 
 
-export Environment, from_elements, execute, Transformation, DataStream, 
+export Environment, Transformation, DataStream,
 map, processElement, process, ProcessFunction,
-readTextFile, print_out, execute_channel
+from_elements, from_table, readTextFile,
+execute, execute_channel,
+print_out
 
 end # module
 

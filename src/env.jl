@@ -20,11 +20,10 @@ function configure(env::Environment, args::Dict{String, Any})
 end
 
 
-# 注册op到env
+# 注册transformation到env
 function add_operator(env::Environment, transformation::Transformation)
     push!(env.transformations, transformation)
 end 
-
 
 function from_elements(env::Environment, data::Any)::DataStreamSource
     # 先把[1,2,3] 遍历一遍, 并都存放到FromElementsFunction.ctx里. 
@@ -37,16 +36,22 @@ function from_elements(env::Environment, data::Any)::DataStreamSource
     return data_stream_source
 end
 
-function from_collection(env::Environment, data)::DataStreamSource
+function from_collection(env::Environment, data::Any)::DataStreamSource
 end
 
 function from_table(env::Environment, data)::DataStreamSource
-    Tables.rows(data)
+    # data = CSV.Rows(path)   # csv rows
+    row_data = Tables.rows(data)  # return a row iterator
+    source_name = "from_table"
+    op_name = "from_table"
+    func = eachline
+    outTypeInfo = Core.String
 
-    transform()
+    data_stream_source = add_source(env, outTypeInfo, func, source_name, op_name, row_data)
+
+    return data_stream_source
 end
 
-# ????? 卡着了
 function readTextFile(env::Environment, path::String)::DataStreamSource
     # data = CSV.Rows(path)   # csv rows
     data = eachline(open(path))
@@ -64,16 +69,11 @@ function add_source(env::Environment, outTypeInfo, func, source_name, op_name, d
     is_parallel = false
     source_operator = StreamSourceOperator(op_name, func, data)  # func 转换为 op 
 
-    transform = StreamSourceTransformation("add_source", source_operator)
-    # transform = StreamSourceTransformation(transform, source_operator)  
+    transform = StreamSourceTransformation("add_source", source_operator)  # op转为transform 
     data_stream_source = DataStreamSource(env, transform, outTypeInfo, source_operator, is_parallel, source_name)
     
-    stream = data_stream_source
-    stream.transformation = transform             # 注册op到stream上
-    add_operator(stream.environment, transform)   # 注册op到env
+    add_operator(data_stream_source.environment, transform)   # 注册transformation到env
 
-    # data_stream_source = transform(data_stream_source, source_name, outTypeInfo, source_operator)
-    
     return data_stream_source
 end
 

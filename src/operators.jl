@@ -124,11 +124,13 @@ end
 mutable struct FilterOperator <: StreamOperator
     name::String
     filter_func
+    filter_cols
 end
 
-function processElement(filter_op::FilterOperator, input_element::StreamRecord)
-    data = filter_op.filter_func(input_element)
-    return data
+function processElement(filter_op::FilterOperator, input_element::StreamRecord)::StreamRecord
+    data = filter_op.filter_func(DataFrame(input_element.value), filter_op.filter_cols)
+    output = StreamRecord(data)
+    return output
 end
 
 function setKeyContextElement(op::OneInputStreamOperator, record::StreamRecord)

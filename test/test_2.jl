@@ -35,7 +35,6 @@ function test_1()
     
 end
 
-
 mutable struct HAC
     top_k::Int  # rank top k
     th::Float64   # 聚类阈值

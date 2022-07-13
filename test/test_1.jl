@@ -1,5 +1,5 @@
 using NeatStream
-using DataFrames, Chain
+using DataFrames, Chain, CSV, Tables, PrettyTables
 using Test
 
 
@@ -28,18 +28,27 @@ function test_1()
 end
 
 function test_2()
+    args_default = Dict("stream_time_type" =>"", "defaultLocalParallelism"=>1)
+    env = Environment("test_job", args_default)
+
     # source
-    filename = ""
-    conn_df = CSV.read(filename; header = false)
-    stream = NeatStream.BatchStream(conn_df; batch_size=2);
+    input_path = "/mnt/zy_data/data/pk/pk_13/output_1/out_1/out_tmp_8.csv"
+    input_table = CSV.read(input_path, DataFrame; header=false)
+    # input_table = pd.read_pickle(input_path)
+    # input_table = DataFrame(input_table)
+    @pt input_table
+    
+    data_stream_source = NeatStream.from_table(env, input_table);
 
     # ops
-    filter = NeatStream.FilterOperator([:x, :y])
-    push!(stream, filter)
+    parse_func = t1
+    # data_stream = NeatStream.map(data_stream_source, "t1", parse_func)
+    parse_func = select!   # t2   filter
+    cols = ["Column1"]   # [:Column1]
+    data_stream = NeatStream.filter(data_stream_source, "filter1", parse_func, cols)
+    data_stream = NeatStream.print_out(data_stream; out_type="data")  # data state
 
-    for i = 1:size(df, 1)
-        stream_filtered = NeatStream.listen(stream)  # stream->df 
-    end
+    execute(env, "test_job")
 end
 
 
@@ -122,7 +131,20 @@ function test_5()
     execute(env, "test_job")
 end
 
-function tt(data)
+function t1(data)
+    data = data.Column1
+    # println("-:$data")
+    return data
+end
+
+function t2(data)
+    columns = ["Column1"]
+    select!(data, columns)
+    # println("-:$data")
+    return data
+end
+
+function tt1(data)
     data = data + 1
     print("-")
     return data
@@ -149,8 +171,8 @@ function test_5_2()
     # data_stream_source = readTextFile(env, path)
 
     # map(f1) 无状态
-    parse_func = tt
-    data_stream = NeatStream.map(data_stream_source, "tt", parse_func)
+    parse_func = tt1
+    data_stream = NeatStream.map(data_stream_source, "tt1", parse_func)
     
     # process(f2,state)  有状态
     tt2_func = ProcessFunction(tt2)
@@ -166,14 +188,14 @@ function test_5_2()
     # add_sink(data_stream, print)
     # println("data_stream:", data_stream)
 
-    # execute(env, "test_job")
-    execute_channel(env, "test_job")
+    execute(env, "test_job")
+    # execute_channel(env, "test_job")
     
 end
 
 
-# test_3()
-test_5_2()
+test_2()
+# test_5_2()
 
 
 

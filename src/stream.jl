@@ -201,9 +201,9 @@ function process(stream::AbstractStream, name::String, process_func::ProcessFunc
 end
 
 # filter
-function filter(stream::DataStream, name::String, filter_func::Function)::DataStream
-    outputType = []
-    filter_operator = FilterOperator(name, filter_func)
+function filter(stream::AbstractStream, name::String, filter_func::Function, cols)::AbstractStream
+    output_type = []
+    filter_operator = FilterOperator(name, filter_func, cols)
     transform(stream, "filter", output_type, filter_operator)
 end
 
